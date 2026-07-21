@@ -1,11 +1,33 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 import { signUp } from "@/app/actions";
 
 export default function SignUpPage() {
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [state, formAction, pending] = useActionState(signUp, undefined);
+
+  const handleGoogleSignUp = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        console.error("Google sign-up error:", error.message);
+        setIsGoogleLoading(false);
+      }
+      // If successful, the browser navigates away
+    } catch {
+      setIsGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-[#0b0f1a]">
@@ -29,9 +51,10 @@ export default function SignUpPage() {
           </p>
 
           {/* Google OAuth */}
-          <Link
-            href="/sign-in"
-            className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          <button
+            onClick={handleGoogleSignUp}
+            disabled={isGoogleLoading}
+            className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -51,13 +74,13 @@ export default function SignUpPage() {
                 fill="#EA4335"
               />
             </svg>
-            Sign up with Gmail
-          </Link>
+            {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
+          </button>
 
           {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
-            <span className="text-xs text-zinc-500">or with your email</span>
+            <span className="text-xs text-zinc-500">or sign up with email</span>
             <div className="flex-1 border-t border-zinc-200 dark:border-zinc-800" />
           </div>
 
@@ -109,8 +132,8 @@ export default function SignUpPage() {
                 name="password"
                 type="password"
                 required
-                minLength={6}
-                placeholder="At least 6 characters"
+                minLength={8}
+                placeholder="At least 8 characters"
                 className="mt-1.5 block w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500"
               />
             </div>

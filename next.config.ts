@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /** Fix workspace root detection with multiple lockfiles */
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

@@ -1,44 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createAuthActions } from "@insforge/sdk/ssr";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
+import { saveUserToDatabase } from "@/lib/auth";
 
-export async function GET(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL!;
-  const code = new URL(request.url).searchParams.get("insforge_code");
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard";
 
-  if (!code) {
-    return NextResponse.redirect(new URL("/sign-in?error=no_code", baseUrl));
-  }
+  if (code) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-  // Build response early so auth actions can write session cookies onto it
-  const response = NextResponse.redirect(new URL("/", baseUrl));
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  const codeVerifier =
-    request.cookies.get("insforge_code_verifier")?.value;
+    if (!error && data?.user) {
+      const meta = data.user.user_metadata ?? {};
 
-  try {
-    const auth = createAuthActions({
-      // requestCookies only needs a .get() method
-      requestCookies: {
-        get: (name: string) => request.cookies.get(name)?.value ?? null,
-      },
-      // responseCookies needs .set() and .delete() – response.cookies provides those
-      responseCookies: response.cookies,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+      // Save the user to the custom users table with Google as provider
+      await saveUserToDatabase({
+        authUserId: data.user.id,
+        fullName:
+          (meta.full_name as string) ??
+          (meta.name as string) ??
+          data.user.email?.split("@")[0] ??
+          "User",
+        email: data.user.email ?? "",
+        avatarUrl: (meta.avatar_url as string) ?? (meta.picture as string) ?? null,
+        provider: "google",
+      });
 
-    const { data, error } = await auth.exchangeOAuthCode(code, codeVerifier);
-
-    if (error || !data?.user) {
-      return NextResponse.redirect(
-        new URL(`/sign-in?error=${error?.message ?? "auth_failed"}`, baseUrl),
-      );
+      return NextResponse.redirect(`${origin}${next}`);
     }
-  } catch {
-    return NextResponse.redirect(
-      new URL("/sign-in?error=auth_failed", baseUrl),
-    );
   }
 
-  response.cookies.delete("insforge_code_verifier");
-  return response;
+  // Redirect to sign-in with an error if the code exchange failed
+  return NextResponse.redirect(`${origin}/sign-in?error=auth_code_error`);
 }

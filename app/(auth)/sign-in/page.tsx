@@ -2,25 +2,35 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { signIn, signInWithGoogle } from "@/app/actions";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { signIn } from "@/app/actions";
 
 export default function SignInPage() {
-  const router = useRouter();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [state, formAction, pending] = useActionState(signIn, undefined);
 
   // Redirect on success
   if (state?.success) {
-    router.push("/");
+    redirect("/dashboard");
   }
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    const result = await signInWithGoogle();
-    if (result?.url) {
-      window.location.href = result.url;
-    } else {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        console.error("Google sign-in error:", error.message);
+        setIsGoogleLoading(false);
+      }
+      // If successful, the browser navigates away — no need to reset state
+    } catch {
       setIsGoogleLoading(false);
     }
   };
@@ -70,7 +80,7 @@ export default function SignInPage() {
                 fill="#EA4335"
               />
             </svg>
-            {isGoogleLoading ? "Redirecting..." : "Continue with Gmail"}
+            {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
           </button>
 
           {/* Divider */}

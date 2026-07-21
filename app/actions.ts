@@ -2,26 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createAuthActions, createServerClient } from "@insforge/sdk/ssr";
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-/** Save the user profile on first sign-in. No-op if already exists. */
-async function saveProfileOnFirstSignIn(userId: string, nickname?: string) {
-  try {
-    const insforge = createServerClient({ cookies: await cookies() });
-    const { data: profile } = await insforge.auth.getProfile(userId);
-    if (!profile) {
-      await insforge.auth.setProfile({
-        nickname: nickname ?? "User",
-      });
-    }
-  } catch {
-    // Non-critical
-  }
-}
+import { createClient } from "@/utils/supabase/server";
+import { saveUserToDatabase } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Actions
@@ -34,25 +16,57 @@ export async function signUp(
   _prev: unknown,
   formData: FormData,
 ): Promise<{ error?: string; success?: boolean; message?: string }> {
-  const email = String(formData.get("email") ?? "");
+  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const name = String(formData.get("name") ?? "");
+  const fullName = String(formData.get("name") ?? "").trim();
 
-  const auth = createAuthActions({ cookies: await cookies() });
-  const { data, error } = await auth.signUp({
+  // --- Validation ---
+  if (!email) return { error: "Email is required." };
+  if (!password) return { error: "Password is required." };
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    name: name || undefined,
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/sign-in`,
+    options: {
+      data: {
+        full_name: fullName || undefined,
+      },
+    },
   });
 
   if (error) {
-    return { error: error.message };
+    const msg = error.message;
+    if (msg.includes("already registered") || msg.includes("already exists")) {
+      return { error: "An account with this email already exists." };
+    }
+    if (msg.toLowerCase().includes("weak password")) {
+      return { error: "Password is too weak. Please use a stronger password." };
+    }
+    return { error: msg };
   }
+
+  if (!data.user) {
+    return { error: "Could not create account. Please try again." };
+  }
+
+  // Save user to custom users table
+  await saveUserToDatabase({
+    authUserId: data.user.id,
+    fullName: fullName || data.user.email?.split("@")[0] || "User",
+    email: data.user.email ?? "",
+    avatarUrl: null,
+  });
 
   return {
     success: true,
-    message: "Account created! Please check your email to verify your account.",
+    message:
+      "Account created! Please check your email to verify your account. You can sign in immediately if email confirmation is disabled.",
   };
 }
 
@@ -63,59 +77,52 @@ export async function signIn(
   _prev: unknown,
   formData: FormData,
 ): Promise<{ error?: string; success?: boolean }> {
-  const email = String(formData.get("email") ?? "");
+  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  const auth = createAuthActions({ cookies: await cookies() });
-  const { data, error } = await auth.signInWithPassword({ email, password });
+  if (!email) return { error: "Email is required." };
+  if (!password) return { error: "Password is required." };
+
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
-    return { error: error.message };
+    const msg = error.message;
+    if (
+      msg.includes("Invalid login credentials") ||
+      msg.includes("invalid email or password")
+    ) {
+      return { error: "Invalid email or password." };
+    }
+    return { error: msg };
   }
 
-  // Save profile on first sign-in
-  if (data?.user?.id) {
-    await saveProfileOnFirstSignIn(data.user.id, (data.user as Record<string, unknown>).name as string | undefined);
+  // Save user to custom users table on first sign-in
+  if (data.user) {
+    const meta = data.user.user_metadata ?? {};
+    await saveUserToDatabase({
+      authUserId: data.user.id,
+      fullName:
+        (meta.full_name as string) ?? data.user.email?.split("@")[0] ?? "User",
+      email: data.user.email ?? "",
+      avatarUrl: (meta.avatar_url as string) ?? null,
+    });
   }
 
   return { success: true };
 }
 
 /**
- * Initiate Google OAuth sign-in.
- * Stores codeVerifier in a cookie for the callback route to use.
- */
-export async function signInWithGoogle(): Promise<{ url?: string; error?: string }> {
-  const cookieStore = await cookies();
-  const auth = createAuthActions({ cookies: cookieStore });
-  const { data, error } = await auth.signInWithOAuth("google", {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-    skipBrowserRedirect: true,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  // Store codeVerifier so the callback can exchange it
-  const codeVerifier = (data as Record<string, unknown>).codeVerifier as string | undefined;
-  if (codeVerifier) {
-    cookieStore.set("insforge_code_verifier", codeVerifier, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 5, // 5 minutes
-    });
-  }
-
-  return { url: data?.url };
-}
-
-/**
  * Sign out the current user and clear cookies.
  */
 export async function signOut() {
-  const auth = createAuthActions({ cookies: await cookies() });
-  await auth.signOut();
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  await supabase.auth.signOut();
   redirect("/");
 }
