@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import "./globals.css";
@@ -47,9 +48,34 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
+      suppressHydrationWarning
     >
+      <head />
+
+      {/* Blocking inline script: applies .dark before first paint to prevent theme flash */}
+      {/* NOTE: Script placed OUTSIDE <head> to avoid React 19's script-tag warning.
+          next/script with beforeInteractive still injects it into <head> at runtime. */}
+      <Script
+        id="theme-init"
+        strategy="beforeInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              try {
+                var theme = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (theme === 'dark' || (!theme && prefersDark)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch(e) {}
+            })();
+          `,
+        }}
+      />
       <body className="min-h-full flex flex-col">
-        {/* Top banner when authenticated */}
+        {/* Top banner when authenticated (only shown outside dashboard) */}
         {currentUser && (
           <div className="border-b border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950/30">
             <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-6">

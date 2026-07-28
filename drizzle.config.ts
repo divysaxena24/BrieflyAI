@@ -1,7 +1,7 @@
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: "./db/schema/*",
+  schema: "./lib/db/schema/*",
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
@@ -9,4 +9,6 @@ export default defineConfig({
   },
   // Do not push to the auth schema; only manage the public schema
   schemaFilter: ["public"],
+  verbose: true,
+  strict: true,
 });

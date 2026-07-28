@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { createUser } from "@/lib/db/queries";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,10 +74,8 @@ export async function getSession() {
 
 /**
  * Save a user to the custom `users` table after their first successful login.
+ * Uses Drizzle ORM via the query layer.
  * No-op if a record with the same `auth_user_id` already exists.
- *
- * Designed to be called from Server Actions and Route Handlers
- * immediately after a user signs up or signs in.
  */
 export async function saveUserToDatabase(user: {
   authUserId: string;
@@ -87,26 +86,12 @@ export async function saveUserToDatabase(user: {
   provider?: string;
 }): Promise<void> {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    // Check for an existing record to avoid duplicates
-    const { data: existing } = await supabase
-      .from("users")
-      .select("id")
-      .eq("auth_user_id", user.authUserId)
-      .maybeSingle();
-
-    if (existing) return;
-
-    // Insert the new user record
-    await supabase.from("users").insert({
-      auth_user_id: user.authUserId,
+    await createUser({
+      authUserId: user.authUserId,
       email: user.email,
-      full_name: user.fullName,
-      avatar_url: user.avatarUrl,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
       provider: user.provider ?? "email",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     });
   } catch {
     // Non-critical – the Supabase session is already established
