@@ -10,9 +10,6 @@ export function validateSchema<T>(schema: z.ZodType<T>, data: unknown): T {
   return res.data as T;
 }
 
-export const uuidSchema = z.string().uuid();
-export const emailSchema = z.string().email();
-
 export * from "./auth";
 export * from "./integrations";
 export * from "./gmail";

@@ -3,13 +3,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { PlatformIcon } from "./PlatformIcon";
+import { formatRelativeTime } from "@/lib/utils/time";
 
 export interface ActivityEntry {
   id: string;
   platformId: string;
   action: string;
-  timestamp: string;
-  type: "connected" | "disconnected" | "synced" | "refreshed" | "error" | "configured";
+  details?: string | null;
+  type: string;
+  createdAt: string;
 }
 
 interface ActivityTimelineProps {
@@ -45,6 +47,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }
     <div className="space-y-3">
       {activities.map((activity, index) => {
         const dotColor = typeColors[activity.type] ?? "bg-zinc-400";
+        const relativeTime = formatRelativeTime(activity.createdAt);
 
         return (
           <motion.div
@@ -70,7 +73,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ activities }
                   {activity.action}
                 </p>
                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-                  {activity.timestamp}
+                  {relativeTime}
                 </span>
               </div>
             </div>

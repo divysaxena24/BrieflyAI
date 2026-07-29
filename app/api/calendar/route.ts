@@ -2,7 +2,7 @@ import { withHandler } from "@/lib/api/handler";
 import { calendarService } from "@/lib/services/calendar";
 import { logger } from "@/lib/logger";
 import { validateSchema } from "@/lib/validators";
-import { calendarEventQuery } from "@/lib/validators/calendar";
+import { calendarEventQuery, calendarPaginationSchema } from "@/lib/validators/calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +16,9 @@ export const GET = withHandler(async (request: Request) => {
   };
 
   const validated = validateSchema(calendarEventQuery, payload);
+  const pagination = validateSchema(calendarPaginationSchema, { maxResults: url.searchParams.get("maxResults") ? Number(url.searchParams.get("maxResults")) : undefined, pageToken: url.searchParams.get("pageToken") ?? undefined });
   logger.info("Calendar query validated", { calendarId: validated.calendarId });
 
-  const res = await calendarService.listEvents(validated.calendarId);
+  const res = await calendarService.listEvents({ calendarId: validated.calendarId, from: validated.from, to: validated.to, maxResults: pagination.maxResults, pageToken: pagination.pageToken });
   return { message: "Events list", data: res };
 });

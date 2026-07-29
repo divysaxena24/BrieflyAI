@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard";
 import { PlatformIcon, ConnectionBadge, PermissionBadge } from "@/components/integrations";
 import { integrationPlatforms, mcpToolsByPlatform } from "@/lib/integrations/config";
-import type { ConnectionStatus } from "@/lib/integrations/types";
+import { useIntegrationStatus } from "@/lib/integrations/store";
 import {
   ArrowRightIcon,
   SettingsIcon,
@@ -14,17 +14,22 @@ import {
   ExternalLinkIcon,
   AlertTriangleIcon,
   CheckCircleIcon,
+  MailIcon,
+  GlobeIcon,
 } from "@/components/dashboard/icons";
 
 export default function PlatformSettingsPage() {
   const params = useParams<{ platform: string }>();
   const platformId = params.platform;
 
-  const integration = integrationPlatforms.find((p) => p.id === platformId);
+  const { platforms, connectPlatform, disconnectPlatform } = useIntegrationStatus();
+
+  // Use the live status from the store, falling back to static config
+  const integration = platforms.find((p) => p.id === platformId) ?? integrationPlatforms.find((p) => p.id === platformId);
   const mcpTools = mcpToolsByPlatform[platformId] ?? [];
 
-  // Local toggle state for Connect/Disconnect
-  const [localStatus, setLocalStatus] = useState<ConnectionStatus>(integration?.status ?? "not-connected");
+  const status = integration?.status ?? "not-connected";
+  const isConnected = status === "connected" || status === "syncing";
 
   if (!integration) {
     return (
@@ -48,36 +53,6 @@ export default function PlatformSettingsPage() {
       </div>
     );
   }
-
-  const isConnected = localStatus === "connected" || localStatus === "syncing";
-
-  const handleConnect = () => {
-    // If platform is Gmail (Google OAuth), initiate server-side OAuth flow
-    if (integration?.id === "gmail") {
-      // redirect to server connect endpoint which will redirect to Google
-      window.location.href = `/api/integrations/google-connect?platform=gmail&next=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
-    // Fallback: local toggle for placeholder providers
-    setLocalStatus("connected");
-  };
-
-  const handleDisconnect = async () => {
-    if (integration?.id === "gmail") {
-      try {
-        const res = await fetch(`/api/integrations/google-disconnect?platform=gmail`, { method: "GET", credentials: "same-origin" });
-        if (res.ok) {
-          setLocalStatus("not-connected");
-        } else {
-          console.error("Failed to disconnect");
-        }
-      } catch (err) {
-        console.error(err);
-      }
-      return;
-    }
-    setLocalStatus("not-connected");
-  };
 
   return (
     <div>
@@ -130,15 +105,15 @@ export default function PlatformSettingsPage() {
             </div>
           </section>
 
-          {/* Connection Status & Account */}
+          {/* Connection Status & Account Info */}
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
             <h3 className="mb-4 text-sm font-bold text-zinc-900 dark:text-white">Connection Status</h3>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <ConnectionBadge status={localStatus} />
+                <ConnectionBadge status={status} />
                 {isConnected && (
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Last synced: {integration.lastSync ?? "Not yet"}
+                    Last synced: {integration.lastSync ?? "Just now"}
                   </span>
                 )}
               </div>
@@ -154,7 +129,7 @@ export default function PlatformSettingsPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={handleConnect}
+                    onClick={() => connectPlatform(platformId)}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-500 active:scale-95"
                   >
                     <ExternalLinkIcon size={14} className="h-3.5 w-3.5" />
@@ -164,7 +139,7 @@ export default function PlatformSettingsPage() {
                 {isConnected && (
                   <button
                     type="button"
-                    onClick={handleDisconnect}
+                    onClick={() => disconnectPlatform(platformId)}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-50 active:scale-95 dark:border-red-900 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
                   >
                     Disconnect
@@ -173,18 +148,56 @@ export default function PlatformSettingsPage() {
               </div>
             </div>
 
+            {/* Connected Account Details — only shown when connected */}
             {isConnected && (
-              <div className="mt-4 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/50">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
-                    <CheckCircleIcon size={20} className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Connected Account</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {integration.account ?? `${integration.name} account`}
-                    </p>
-                  </div>
+              <div className="mt-5 space-y-3 rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/50">
+                <h4 className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                  <CheckCircleIcon size={14} className="h-3.5 w-3.5 text-emerald-500" />
+                  Connected Account
+                </h4>
+
+                <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-2.5 text-xs">
+                  {/* Email */}
+                  <span className="font-medium text-zinc-400">Email</span>
+                  <span className="flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
+                    <MailIcon size={12} className="h-3 w-3 text-zinc-400" />
+                    {integration.account ?? "Not available"}
+                  </span>
+
+                  {/* Provider */}
+                  <span className="font-medium text-zinc-400">Provider</span>
+                  <span className="flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-300">
+                    <GlobeIcon size={12} className="h-3 w-3 text-zinc-400" />
+                    {integration.authenticationType === "google-oauth" ? "Google" : integration.name}
+                  </span>
+
+                  {/* Permissions */}
+                  <span className="font-medium text-zinc-400">Permissions</span>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    <PermissionBadge level={integration.permissions} />
+                  </span>
+
+                  {/* Status */}
+                  <span className="font-medium text-zinc-400">Status</span>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    <ConnectionBadge status={status} />
+                  </span>
+
+                  {/* Scopes */}
+                  {integration.scopes && (
+                    <>
+                      <span className="font-medium text-zinc-400">Scopes</span>
+                      <span className="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                        {integration.scopes.split(" ").map((s) => s.split("/").pop() || s).join(", ")}
+                      </span>
+                    </>
+                  )}
+
+                  {/* Last Sync */}
+                  <span className="font-medium text-zinc-400">Last Sync</span>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {integration.lastSync ?? "Just now"}
+                  </span>
                 </div>
               </div>
             )}
@@ -285,7 +298,7 @@ export default function PlatformSettingsPage() {
             </p>
             <button
               type="button"
-              onClick={handleDisconnect}
+              onClick={() => disconnectPlatform(platformId)}
               className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-50 active:scale-95 dark:border-red-900 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
             >
               Disconnect {integration.name}

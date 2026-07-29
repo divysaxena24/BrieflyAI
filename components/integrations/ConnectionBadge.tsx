@@ -42,6 +42,12 @@ const statusConfig: Record<
     text: "text-red-700 dark:text-red-300",
     icon: AlertTriangleIcon,
   },
+  disconnecting: {
+    label: "Disconnecting",
+    bg: "bg-amber-100/80 dark:bg-amber-950/60",
+    text: "text-amber-700 dark:text-amber-300",
+    icon: Loader2Icon,
+  },
   "token-expired": {
     label: "Token Expired",
     bg: "bg-orange-100/80 dark:bg-orange-950/60",
@@ -54,7 +60,7 @@ export const ConnectionBadge: React.FC<ConnectionBadgeProps> = ({ status }) => {
   const config = statusConfig[status];
   const Icon = config.icon;
 
-  const isSpinning = status === "connecting" || status === "syncing";
+  const isSpinning = status === "connecting" || status === "syncing" || status === "disconnecting";
 
   return (
     <span

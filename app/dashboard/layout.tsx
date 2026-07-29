@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { signOut } from "@/app/actions";
 import { DashboardLayout } from "@/components/dashboard";
+import { IntegrationStoreProvider } from "@/lib/integrations/store";
 
 export default async function DashboardRootLayout({
   children,
@@ -15,7 +16,9 @@ export default async function DashboardRootLayout({
       userFullName={user.fullName}
       onSignOut={signOut}
     >
-      {children}
+      <IntegrationStoreProvider>
+        {children}
+      </IntegrationStoreProvider>
     </DashboardLayout>
   );
 }

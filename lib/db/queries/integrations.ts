@@ -1,5 +1,5 @@
 import { eq, and } from "drizzle-orm";
-import { db, integrations } from "@/lib/db";
+import { db, integrations, oauthTokens } from "@/lib/db";
 
 /**
  * Get all integrations for a user.
@@ -37,6 +37,43 @@ export async function getUserIntegrationByPlatform(userId: string, platform: str
     .limit(1);
   return result[0] ?? null;
 }
+
+/**
+ * Get full connected account info including OAuth scopes for a specific platform.
+ * Joins integrations with oauth_tokens to provide email, name, avatar, scopes, permissions.
+ * Returns null if no integration exists for the given user + platform.
+ */
+export async function getConnectedAccount(userId: string, platform: string) {
+  const result = await db
+    .select({
+      id: integrations.id,
+      userId: integrations.userId,
+      platform: integrations.platform,
+      status: integrations.status,
+      permissions: integrations.permissions,
+      accountEmail: integrations.accountEmail,
+      accountName: integrations.accountName,
+      metadata: integrations.metadata,
+      lastSyncAt: integrations.lastSyncAt,
+      syncStatus: integrations.syncStatus,
+      createdAt: integrations.createdAt,
+      updatedAt: integrations.updatedAt,
+      scopes: oauthTokens.scope,
+      expiresAt: oauthTokens.expiresAt,
+    })
+    .from(integrations)
+    .leftJoin(oauthTokens, eq(oauthTokens.integrationId, integrations.id))
+    .where(
+      and(eq(integrations.userId, userId), eq(integrations.platform, platform))
+    )
+    .limit(1);
+  return result[0] ?? null;
+}
+
+/**
+ * Return type for getConnectedAccount.
+ */
+export type ConnectedAccount = Awaited<ReturnType<typeof getConnectedAccount>>;
 
 /**
  * Type for creating a new integration.

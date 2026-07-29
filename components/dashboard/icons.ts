@@ -46,6 +46,7 @@ import {
   ListChecks,
   Network,
   Cpu,
+  Globe,
 } from "lucide-react";
 
 // Try importing Hugeicons React icons dynamically/safely
@@ -117,6 +118,8 @@ export const WifiOffIcon = WifiOff;
 export const AlertTriangleIcon = AlertTriangle;
 export const LockIcon = Lock;
 export const PlugIcon = Plug;
+export const MailIcon = Mail;
+export const GlobeIcon = Globe;
 
 // Overview dashboard utility icons
 export const LayersIcon = resolveIcon(["LayersIcon", "StackIcon"], Layers);

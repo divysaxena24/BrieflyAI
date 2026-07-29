@@ -23,6 +23,9 @@ export type MessageDetail = {
   // Not returning full body to avoid exposing sensitive content
   // Provide limited preview only
   preview?: string | null;
+  // attachments metadata (filename, mimeType, partId, size)
+  attachments?: Array<{ filename?: string; mimeType?: string; partId?: string; size?: number | null }>;
+  inlineImages?: Array<{ mimeType?: string; partId?: string; size?: number | null }>;
 };
 
 export type ThreadDetail = {

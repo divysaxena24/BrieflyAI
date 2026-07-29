@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
-export default async function handler(request: Request) {
+export async function GET(request: Request) {
   // Bootstrap providers explicitly
   registry.bootstrapProviders();
 
@@ -36,7 +36,7 @@ export default async function handler(request: Request) {
   }
 
   try {
-    const cookieVal = JSON.stringify({ state, platform, next, userId });
+    const cookieVal = JSON.stringify({ state, platform, next });
     cookieStore.set("briefly_oauth_state", cookieVal, { httpOnly: true, path: "/", sameSite: "lax" });
   } catch (err) {
     logger.debug("Could not set oauth_state cookie", { error: err });

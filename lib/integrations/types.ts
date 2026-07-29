@@ -2,6 +2,7 @@ export type ConnectionStatus =
   | "not-connected"
   | "connecting"
   | "connected"
+  | "disconnecting"
   | "syncing"
   | "error"
   | "token-expired";
@@ -30,6 +31,8 @@ export interface IntegrationConfig {
   permissions: string;
   lastSync: string | null;
   account: string | null;
+  /** Space-separated OAuth scope string from oauth_tokens */
+  scopes?: string | null;
   /** Hex color or Tailwind gradient key used for the platform accent */
   accentColor: string;
 }

@@ -1,11 +1,6 @@
-import { AppError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
+export * from "./driveService";
+export * from "./driveClient";
+export * from "./types";
+export { default as driveService } from "./driveService";
+export { default } from "./driveService";
 
-export async function searchDrive(_query: string) {
-  logger.debug("Drive: searchDrive called (placeholder)");
-  throw new AppError("Drive service not implemented", 501, "not_implemented");
-}
-
-export const driveService = { searchDrive };
-
-export default driveService;

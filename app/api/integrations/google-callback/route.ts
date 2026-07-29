@@ -3,13 +3,14 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { registry } from "@/lib/services/integrations/registry";
 import { logger } from "@/lib/logger";
-import { db, oauthTokens } from "@/lib/db";
+import { db, integrations, oauthTokens } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { getUserIntegrationByPlatform, createIntegration, updateIntegrationStatus } from "@/lib/db/queries";
+import { getUserIntegrationByPlatform, createIntegration, updateIntegrationStatus, findUserByAuthId, logActivity } from "@/lib/db/queries";
+import { fetchGoogleUserInfo } from "@/lib/services/google-userinfo";
 
 export const dynamic = "force-dynamic";
 
-export default async function handler(request: Request) {
+export async function GET(request: Request) {
   // Bootstrap providers
   registry.bootstrapProviders();
 
@@ -45,7 +46,23 @@ export default async function handler(request: Request) {
   }
 
   const platform = parsed.platform ?? "google";
-  const userId = parsed.userId;
+
+  // Resolve the application user from the authenticated session
+  const supabase = createClient(cookieStore);
+  const { data: userData } = await supabase.auth.getUser();
+  const authUserId = userData?.user?.id;
+  if (!authUserId) {
+    logger.warn("Google callback: not authenticated");
+    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  }
+
+  const appUser = await findUserByAuthId(authUserId);
+  if (!appUser) {
+    logger.error("Google callback: application user not found", { authUserId });
+    return NextResponse.json({ message: "Application user not found" }, { status: 404 });
+  }
+
+  const userId = appUser.id;
 
   // Exchange code for tokens
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -74,6 +91,30 @@ export default async function handler(request: Request) {
     integration = await createIntegration({ userId, platform, permissions: "read", metadata: JSON.stringify({ provider: "google" }) });
   }
 
+  // Fetch Google account info and store email/name
+  const userInfo = await fetchGoogleUserInfo(access_token);
+  if (userInfo) {
+    await db
+      .update(integrations)
+      .set({
+        accountEmail: userInfo.email,
+        accountName: userInfo.name,
+        metadata: JSON.stringify({
+          provider: "google",
+          accountEmail: userInfo.email,
+          accountName: userInfo.name,
+          avatarUrl: userInfo.picture,
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(integrations.id, integration.id));
+    logger.info("Google account info stored", {
+      email: userInfo.email,
+      platform,
+      integrationId: integration.id,
+    });
+  }
+
   // Upsert oauth_tokens
   const expiresAt = expires_in ? new Date(Date.now() + Number(expires_in) * 1000) : null;
   const existing = await db.select().from(oauthTokens).where(eq(oauthTokens.integrationId, integration.id)).limit(1);
@@ -93,7 +134,22 @@ export default async function handler(request: Request) {
     logger.debug("Could not clear oauth_state cookie", { err });
   }
 
+  // Log the connection activity
+  try {
+    await logActivity({
+      userId,
+      platform,
+      action: `Connected ${platform.charAt(0).toUpperCase() + platform.slice(1)}`,
+      details: `Successfully connected via Google OAuth`,
+      integrationId: integration.id,
+      metadata: { scopes: scope },
+    });
+  } catch (logErr) {
+    logger.debug("Failed to log activity", { error: String(logErr) });
+  }
+
   logger.info("Google OAuth connected", { userId, platform, integrationId: integration.id });
 
-  return NextResponse.redirect(next);
+  const redirectUrl = new URL(next, request.url);
+  return NextResponse.redirect(redirectUrl);
 }

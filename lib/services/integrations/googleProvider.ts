@@ -37,7 +37,20 @@ export class GoogleProvider implements Provider {
     const clientId = process.env.GOOGLE_CLIENT_ID!;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI!;
 
-    const scope = ["openid", "email", "profile"].join(" ");
+    const scope = [
+      "openid",
+      "email",
+      "profile",
+
+      // Gmail
+      "https://www.googleapis.com/auth/gmail.readonly",
+
+      // Calendar
+      "https://www.googleapis.com/auth/calendar.readonly",
+
+      // Drive
+      "https://www.googleapis.com/auth/drive.metadata.readonly",
+    ].join(" ");
     const state = crypto.randomBytes(16).toString("hex");
 
     const params: Record<string, string> = {
@@ -67,11 +80,13 @@ export class GoogleProvider implements Provider {
     }
   }
 
-  async status(userId: string, _platform: string): Promise<StatusResult> {
-    logger.debug("GoogleProvider.status called", { userId });
+  async status(userId: string, platform: string): Promise<StatusResult> {
+    logger.debug("GoogleProvider.status called", { userId, platform });
 
     try {
-      const integration = await getUserIntegrationByPlatform(userId, this.id);
+      // Use the passed platform (e.g., "gmail") instead of this.id ("google")
+      // because OAuth callback stores integrations with platform = "gmail"
+      const integration = await getUserIntegrationByPlatform(userId, platform || this.id);
       if (!integration) {
         return {
           provider: this.id,

@@ -9,7 +9,6 @@ import { OverviewCard } from "./OverviewCard";
 import { ProgressCard } from "./ProgressCard";
 import { HealthIndicator } from "./HealthIndicator";
 import { ActivityTimeline } from "./ActivityTimeline";
-import type { ActivityEntry } from "./ActivityTimeline";
 import {
   PlatformLinkIcon,
   RefreshCwIcon,
@@ -22,18 +21,6 @@ import {
   AiSparklesIcon,
   ArrowRightIcon,
 } from "@/components/dashboard/icons";
-
-// ──────────────────────────────────────────────
-//  Mock recent activity (will be replaced with real data)
-// ──────────────────────────────────────────────
-
-const mockActivities: ActivityEntry[] = [
-  { id: "act-1", platformId: "gmail", action: "Connected Gmail", timestamp: "2 min ago", type: "connected" },
-  { id: "act-2", platformId: "github", action: "Connected GitHub", timestamp: "15 min ago", type: "connected" },
-  { id: "act-3", platformId: "slack", action: "Slack synchronized", timestamp: "1 hour ago", type: "synced" },
-  { id: "act-4", platformId: "google-calendar", action: "Google Calendar refreshed", timestamp: "2 hours ago", type: "refreshed" },
-  { id: "act-5", platformId: "whatsapp", action: "WhatsApp disconnected", timestamp: "1 day ago", type: "disconnected" },
-];
 
 // ──────────────────────────────────────────────
 //  Compute derived stats from platform config
@@ -93,13 +80,22 @@ function computeOverviewStats(platforms: IntegrationConfig[]) {
 
 interface IntegrationOverviewProps {
   platforms?: IntegrationConfig[];
-  activities?: ActivityEntry[];
+  /** Activity data from /api/activity. Falls back to empty state when undefined/null. */
+  activities?: Array<{
+    id: string;
+    platformId: string;
+    action: string;
+    details?: string | null;
+    type: string;
+    createdAt: string;
+  }> | null;
 }
 
 export const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
   platforms = integrationPlatforms,
-  activities = mockActivities,
+  activities,
 }) => {
+  const safeActivities = activities ?? [];
   const stats = useMemo(() => computeOverviewStats(platforms), [platforms]);
 
   const isEmpty = stats.connected === 0;
@@ -265,14 +261,14 @@ export const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
         <OverviewCard
           icon={ListChecksIcon}
           title="Recent Activity"
-          stat={`${activities.length} events`}
+          stat={`${safeActivities.length} events`}
           description="Latest integration activity"
           gradient=""
           iconBg="bg-indigo-50 dark:bg-indigo-950/40"
           iconColor="text-indigo-600 dark:text-indigo-400"
         >
           <div className="mt-2">
-            <ActivityTimeline activities={activities} />
+            <ActivityTimeline activities={safeActivities} />
           </div>
         </OverviewCard>
       </StatsGrid>

@@ -12,6 +12,5 @@ export const gmailPaginationSchema = z.object({
   pageToken: z.string().optional(),
 });
 
-export const gmailLabelIdSchema = z.string().min(1);
 
 export type GmailSearchInput = z.infer<typeof gmailSearchSchema>;

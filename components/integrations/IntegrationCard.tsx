@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import type { ConnectionStatus, IntegrationConfig } from "@/lib/integrations/types";
+import type { IntegrationConfig } from "@/lib/integrations/types";
 import { PlatformIcon } from "./PlatformIcon";
 import { ConnectionBadge } from "./ConnectionBadge";
 import { PermissionBadge } from "./PermissionBadge";
 import { SyncStatus } from "./SyncStatus";
-import { ConnectionActions } from "./ConnectionActions";
 import { ArrowRightIcon } from "@/components/dashboard/icons";
 
 interface IntegrationCardProps {
@@ -15,13 +14,7 @@ interface IntegrationCardProps {
 }
 
 export const IntegrationCard: React.FC<IntegrationCardProps> = ({ integration }) => {
-  const { id, name, description, category, accentColor, permissions, lastSync, account } = integration;
-
-  // Local state so Connect/Disconnect toggles instantly
-  const [localStatus, setLocalStatus] = useState<ConnectionStatus>(integration.status);
-
-  const handleConnect = () => setLocalStatus("connected");
-  const handleDisconnect = () => setLocalStatus("not-connected");
+  const { id, name, description, category, accentColor, permissions, lastSync, account, status } = integration;
 
   return (
     <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/90">
@@ -50,7 +43,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({ integration })
               </span>
             </div>
           </div>
-          <ConnectionBadge status={localStatus} />
+          <ConnectionBadge status={status} />
         </div>
 
         {/* Description */}
@@ -61,7 +54,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({ integration })
         {/* Meta row: permission + sync + account */}
         <div className="flex flex-wrap items-center gap-2.5">
           <PermissionBadge level={permissions} />
-          <SyncStatus lastSync={localStatus === "connected" ? "Just now" : lastSync} status="idle" error={null} />
+          <SyncStatus lastSync={status === "connected" ? "Just now" : lastSync} status="idle" error={null} />
           {account && (
             <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 truncate max-w-[140px]">
               {account}
@@ -70,21 +63,14 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({ integration })
         </div>
       </div>
 
-      {/* Footer actions */}
-      <div className="mt-5 flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
-        <ConnectionActions
-          platformId={id}
-          status={localStatus}
-          onConnect={handleConnect}
-          onDisconnect={handleDisconnect}
-        />
-
+      {/* Footer: Details link only — Connect/Disconnect moved to Settings page */}
+      <div className="mt-5 flex items-center justify-end border-t border-zinc-100 pt-4 dark:border-zinc-800">
         <Link
           href={`/dashboard/integrations/${id}`}
-          className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
         >
           Details
-          <ArrowRightIcon size={12} className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+          <ArrowRightIcon size={14} className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>
