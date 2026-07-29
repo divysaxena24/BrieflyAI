@@ -51,8 +51,33 @@ export default function PlatformSettingsPage() {
 
   const isConnected = localStatus === "connected" || localStatus === "syncing";
 
-  const handleConnect = () => setLocalStatus("connected");
-  const handleDisconnect = () => setLocalStatus("not-connected");
+  const handleConnect = () => {
+    // If platform is Gmail (Google OAuth), initiate server-side OAuth flow
+    if (integration?.id === "gmail") {
+      // redirect to server connect endpoint which will redirect to Google
+      window.location.href = `/api/integrations/google-connect?platform=gmail&next=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+    // Fallback: local toggle for placeholder providers
+    setLocalStatus("connected");
+  };
+
+  const handleDisconnect = async () => {
+    if (integration?.id === "gmail") {
+      try {
+        const res = await fetch(`/api/integrations/google-disconnect?platform=gmail`, { method: "GET", credentials: "same-origin" });
+        if (res.ok) {
+          setLocalStatus("not-connected");
+        } else {
+          console.error("Failed to disconnect");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      return;
+    }
+    setLocalStatus("not-connected");
+  };
 
   return (
     <div>

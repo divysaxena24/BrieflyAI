@@ -1,36 +1,25 @@
-import { NextResponse } from "next/server";
+import { withHandler } from "@/lib/api/handler";
 import { checkDatabaseConnection } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/health
- *
- * Health check endpoint for the BrieflyAI API.
- * Verifies application status and database connectivity.
- */
-export async function GET() {
+export const GET = withHandler(async () => {
+  logger.debug("GET /api/health - handler");
   let dbStatus = "disconnected";
-  let dbError: string | null = null;
-
   try {
     const isConnected = await checkDatabaseConnection();
     dbStatus = isConnected ? "connected" : "error";
   } catch (err) {
     dbStatus = "error";
-    dbError = err instanceof Error ? err.message : "Unknown error";
   }
 
-  return NextResponse.json(
-    {
-      success: dbStatus === "connected",
-      database: {
-        status: dbStatus,
-        ...(dbError && { error: dbError }),
-      },
-      environment: process.env.NODE_ENV ?? "development",
-      timestamp: new Date().toISOString(),
-    },
-    { status: dbStatus === "connected" ? 200 : 503 }
-  );
-}
+  const payload = {
+    database: { status: dbStatus },
+    environment: process.env.NODE_ENV ?? "development",
+    timestamp: new Date().toISOString(),
+  };
+
+  logger.info("Health check", { dbStatus });
+  return { message: dbStatus === "connected" ? "ok" : "db_error", data: payload };
+});

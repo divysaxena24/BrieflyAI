@@ -90,18 +90,29 @@ export default async function Home() {
               </p>
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-                <Link
-                  href="/sign-up"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-zinc-900 px-7 text-sm font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 active:scale-95 dark:bg-white dark:text-zinc-900 dark:shadow-white/10 dark:hover:bg-zinc-200"
-                >
-                  Start Free Trial
-                </Link>
-                <Link
-                  href="/sign-in"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-300 bg-white px-7 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                >
-                  View Integrations
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-zinc-900 px-7 text-sm font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 active:scale-95 dark:bg-white dark:text-zinc-900 dark:shadow-white/10 dark:hover:bg-zinc-200"
+                  >
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/sign-up"
+                      className="inline-flex h-12 items-center justify-center rounded-full bg-zinc-900 px-7 text-sm font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 active:scale-95 dark:bg-white dark:text-zinc-900 dark:shadow-white/10 dark:hover:bg-zinc-200"
+                    >
+                      Start Free Trial
+                    </Link>
+                    <Link
+                      href="/sign-in"
+                      className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-300 bg-white px-7 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      View Integrations
+                    </Link>
+                  </>
+                )}
               </div>
 
               <div className="mt-10 flex flex-col gap-4">
@@ -283,7 +294,11 @@ export default async function Home() {
             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to Simplify Your Digital Life?</h2>
             <p className="mx-auto mt-4 max-w-md text-zinc-400">Join thousands of professionals already using BrieflyAI to stay organized across all their platforms.</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link href="/sign-up" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-zinc-900 shadow-lg shadow-white/10 transition-all hover:bg-zinc-100 active:scale-95">Get Started Free</Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-zinc-900 shadow-lg shadow-white/10 transition-all hover:bg-zinc-100 active:scale-95">Go to Dashboard</Link>
+              ) : (
+                <Link href="/sign-up" className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-zinc-900 shadow-lg shadow-white/10 transition-all hover:bg-zinc-100 active:scale-95">Get Started Free</Link>
+              )}
               <Link href="#" className="inline-flex h-12 items-center justify-center rounded-full border border-zinc-700 px-8 text-sm font-semibold text-zinc-300 transition-all hover:bg-zinc-800 active:scale-95">Talk to Sales</Link>
             </div>
             <p className="mt-6 text-xs text-zinc-500">No credit card required &bull; Free forever plan available &bull; Cancel anytime</p>

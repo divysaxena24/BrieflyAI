@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import "./globals.css";
@@ -51,29 +50,6 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head />
-
-      {/* Blocking inline script: applies .dark before first paint to prevent theme flash */}
-      {/* NOTE: Script placed OUTSIDE <head> to avoid React 19's script-tag warning.
-          next/script with beforeInteractive still injects it into <head> at runtime. */}
-      <Script
-        id="theme-init"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              try {
-                var theme = localStorage.getItem('theme');
-                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (theme === 'dark' || (!theme && prefersDark)) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
-              } catch(e) {}
-            })();
-          `,
-        }}
-      />
       <body className="min-h-full flex flex-col">
         {/* Top banner when authenticated (only shown outside dashboard) */}
         {currentUser && (
