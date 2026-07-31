@@ -76,25 +76,28 @@ const MOCK_CONNECT_DELAY = 300;
 // ──────────────────────────────────────────────
 
 /**
- * Determine whether a platform uses Google OAuth (requires server-side redirect).
+ * Determine whether a platform uses server-side OAuth (Google or GitHub),
+ * which requires a browser redirect through the provider's consent screen.
  */
-function isGoogleOAuthPlatform(platformId: string): boolean {
-  return platformId === "gmail" || platformId === "google-calendar" || platformId === "google-drive";
+function isOAuthPlatform(platformId: string): boolean {
+  return ["gmail", "google-calendar", "google-drive", "github"].includes(platformId);
 }
 
 /**
- * Build the Google OAuth redirect URL for a platform.
+ * Build the OAuth redirect URL for a platform.
  */
-function buildGoogleConnectUrl(platformId: string, currentPath: string): string {
+function buildConnectUrl(platformId: string, currentPath: string): string {
   const next = encodeURIComponent(currentPath);
-  return `/api/integrations/google-connect?platform=${platformId}&next=${next}`;
+  const route = platformId === "github" ? "github-connect" : "google-connect";
+  return `/api/integrations/${route}?platform=${platformId}&next=${next}`;
 }
 
 /**
- * Build the Google OAuth disconnect URL for a platform.
+ * Build the OAuth disconnect URL for a platform.
  */
-function buildGoogleDisconnectUrl(platformId: string): string {
-  return `/api/integrations/google-disconnect?platform=${platformId}`;
+function buildDisconnectUrl(platformId: string): string {
+  const route = platformId === "github" ? "github-disconnect" : "google-disconnect";
+  return `/api/integrations/${route}?platform=${platformId}`;
 }
 
 // ──────────────────────────────────────────────
@@ -193,10 +196,11 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
         return;
       }
 
-      if (isGoogleOAuthPlatform(platformId)) {
-        // Google OAuth: redirect the browser — the callback will refetch status
-        // Only redirect when status is not-connected (confirmed above).
-        window.location.href = buildGoogleConnectUrl(platformId, window.location.pathname);
+      if (isOAuthPlatform(platformId)) {
+        // OAuth platforms (Google/GitHub): redirect the browser — the callback will
+        // redirect back and the store refetches status. Only redirect when status
+        // is not-connected (confirmed above).
+        window.location.href = buildConnectUrl(platformId, window.location.pathname);
         return;
       }
 
@@ -214,7 +218,7 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
 
   const disconnectPlatform = useCallback(
     async (platformId: string) => {
-      if (isGoogleOAuthPlatform(platformId)) {
+      if (isOAuthPlatform(platformId)) {
         const prev = snapshot();
 
         // Optimistic: show "disconnecting" then "not-connected"
@@ -225,7 +229,7 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
           updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
 
           try {
-            const res = await fetch(buildGoogleDisconnectUrl(platformId), {
+            const res = await fetch(buildDisconnectUrl(platformId), {
               method: "GET",
               credentials: "same-origin",
             });

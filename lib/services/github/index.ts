@@ -1,11 +1,12 @@
-import { AppError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
+// ──────────────────────────────────────────────
+//  GitHub services barrel
+//  Reusable HTTP layer (client/errors/utils) + repositories service.
+// ──────────────────────────────────────────────
 
-export async function listRepos(_owner: string) {
-  logger.debug("GitHub: listRepos called (placeholder)");
-  throw new AppError("GitHub service not implemented", 501, "not_implemented");
-}
+export * from "./githubService";
+export * from "./githubClient";
+export * from "./githubErrors";
+export * from "./githubUtils";
 
-export const githubService = { listRepos };
-
-export default githubService;
+export { default as githubService } from "./githubService";
+export { default } from "./githubService";

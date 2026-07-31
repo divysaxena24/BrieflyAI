@@ -15,8 +15,18 @@ export const GET = withHandler(async (request: Request) => {
   };
 
   const validated = validateSchema(githubQuerySchema, payload);
-  logger.info("GitHub query validated", { owner: validated.owner, repo: validated.repo });
 
-  const res = await githubService.listRepos(validated.owner ?? "");
+  // Specific repository lookup when both owner + repo are provided
+  if (validated.owner && validated.repo) {
+    logger.info("GitHub query validated (repo detail)", { owner: validated.owner, repo: validated.repo });
+    const res = await githubService.getRepository(validated.owner, validated.repo);
+    return { message: "Repository detail", data: res };
+  }
+
+  // Otherwise list the authenticated user's repositories.
+  // Note: an owner-only query (owner without repo) intentionally lists the
+  // authenticated user's repos — this integration is scoped to the user's
+  // own GitHub account, so the owner param is ignored in that case.
+  const res = await githubService.listRepositories();
   return { message: "Repository list", data: res };
 });

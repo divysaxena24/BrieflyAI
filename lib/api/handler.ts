@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import { AppError, apiFailure, apiSuccess } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
-export type RouteHandler = (req: Request) => Promise<NextResponse> | Promise<any> | any;
+export type RouteHandler = (req: Request, ...args: unknown[]) => Promise<NextResponse> | Promise<any> | any;
 
 /**
  * Wrap route handlers to centralize error handling and logging.
  * Handler should perform validation and call services and return a plain object or NextResponse.
+ * Extra arguments (e.g. Next.js dynamic route `{ params }`) are forwarded to the handler so
+ * dynamic routes can use path parameters while keeping the same error handling.
  */
 export function withHandler(handler: RouteHandler) {
-  return async function (req: Request) {
+  return async function (req: Request, ...args: unknown[]) {
     try {
       logger.info("Incoming request", { method: (req as any).method ?? "GET", url: (req as any).url ?? "-" });
-      const result = await handler(req);
+      const result = await handler(req, ...args);
 
       // If handler returned an object shaped { message, data }, use message as success message
       if (result && typeof result === "object" && "message" in (result as any) && "data" in (result as any)) {

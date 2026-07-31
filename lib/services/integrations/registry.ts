@@ -62,6 +62,19 @@ export function bootstrapProviders() {
   } catch (err) {
     logger.debug("bootstrapProviders: GoogleProvider not registered", { error: err });
   }
+
+  // Register GitHubProvider if configuration present
+  try {
+    const GitHub = require("./githubProvider").GitHubProvider;
+    if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET && process.env.GITHUB_REDIRECT_URI) {
+      const github = new GitHub();
+      // Register under 'github' (overwrites the placeholder registered above)
+      registerProvider("github", github);
+      logger.info("bootstrapProviders: GitHubProvider registered for 'github'");
+    }
+  } catch (err) {
+    logger.debug("bootstrapProviders: GitHubProvider not registered", { error: err });
+  }
 }
 
 export function listRegisteredProviders() {
