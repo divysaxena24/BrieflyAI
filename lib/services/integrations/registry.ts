@@ -75,6 +75,54 @@ export function bootstrapProviders() {
   } catch (err) {
     logger.debug("bootstrapProviders: GitHubProvider not registered", { error: err });
   }
+
+  // Register DiscordProvider if configuration present
+  try {
+    const Discord = require("./discordProvider").DiscordProvider;
+    if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET && process.env.DISCORD_REDIRECT_URI) {
+      const discord = new Discord();
+      // Register under 'discord' (overwrites the placeholder registered above)
+      registerProvider("discord", discord);
+      logger.info("bootstrapProviders: DiscordProvider registered for 'discord'");
+    }
+  } catch (err) {
+    logger.debug("bootstrapProviders: DiscordProvider not registered", { error: err });
+  }
+
+  // Register TelegramProvider unconditionally — Telegram uses per-user Bot
+  // Tokens, so unlike Google/GitHub/Discord there are no server-side
+  // CLIENT_ID / CLIENT_SECRET / REDIRECT_URI credentials to gate on.
+  try {
+    const Telegram = require("./telegramProvider").TelegramProvider;
+    // Register under 'telegram' (overwrites the placeholder registered above)
+    registerProvider("telegram", new Telegram());
+    logger.info("bootstrapProviders: TelegramProvider registered for 'telegram'");
+  } catch (err) {
+    logger.debug("bootstrapProviders: TelegramProvider not registered", { error: err });
+  }
+
+  // Register WhatsAppProvider unconditionally — WhatsApp uses per-user Baileys
+  // sessions (QR pairing), so like Telegram there are no server-side
+  // CLIENT_ID / CLIENT_SECRET / REDIRECT_URI credentials to gate on.
+  try {
+    const WhatsAppProvider =
+      require("./whatsappProvider").WhatsAppProvider;
+    // Register under 'whatsapp' (overwrites the placeholder registered above)
+    registerProvider(
+      "whatsapp",
+      new WhatsAppProvider()
+    );
+
+    logger.info(
+      "bootstrapProviders: WhatsAppProvider registered"
+    );
+
+  } catch (error) {
+    logger.debug(
+      "bootstrapProviders: WhatsAppProvider unavailable",
+      { error }
+    );
+  }
 }
 
 export function listRegisteredProviders() {

@@ -5,6 +5,17 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  /**
+   * Optional runtime image libraries used by Baileys for media thumbnails.
+   * Baileys itself must stay BUNDLED: it is ESM-only, and externalizing it
+   * makes Turbopack wrap its importers (whatsappProvider) as async modules,
+   * breaking the registry's synchronous require(). jimp is installed; sharp
+   * is external and simply absent at runtime (Baileys falls back to jimp).
+   */
+  serverExternalPackages: [
+    "jimp",
+    "sharp",
+  ],
 };
 
 export default nextConfig;

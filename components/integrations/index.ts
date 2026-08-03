@@ -1,5 +1,7 @@
 export { IntegrationGrid } from "./IntegrationGrid";
 export { IntegrationCard } from "./IntegrationCard";
+export { BotTokenConnectDialog } from "./BotTokenConnectDialog";
+export { WhatsAppConnectDialog } from "./WhatsAppConnectDialog";
 export { ConnectionBadge } from "./ConnectionBadge";
 export { PlatformIcon } from "./PlatformIcon";
 export { SyncStatus } from "./SyncStatus";
