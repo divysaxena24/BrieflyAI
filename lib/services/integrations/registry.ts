@@ -35,7 +35,7 @@ export function getProvider(id: string): Provider {
  * This is safe to call during bootstrap.
  */
 export function registerDefaultPlaceholders() {
-  ["gmail", "google-calendar", "google-drive", "github", "slack", "discord", "telegram", "whatsapp"].forEach((id) => {
+  ["gmail", "google-calendar", "google-drive", "github", "discord", "telegram", "whatsapp"].forEach((id) => {
     if (!providers.has(id)) {
       registerProvider(id, new DefaultProvider(id, getProviderDisplayName(id)));
     }

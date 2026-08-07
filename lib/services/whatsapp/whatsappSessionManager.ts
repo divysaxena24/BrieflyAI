@@ -3,11 +3,15 @@ import path from "path";
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState as loadMultiFileAuthState,
+  type Chat,
   type ConnectionState,
+  type Contact,
+  type WAMessage,
   type WASocket,
 } from "@whiskeysockets/baileys";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { extractMessageText, normalizeNumber } from "./whatsappUtils";
 
 /**
  * Structured log meta with the platform tag, mirroring the other service layers.
@@ -48,6 +52,14 @@ interface SessionEntry {
   reconnectAttempts: number;
   /** True once disconnect()/removeSession() runs — blocks auto-reconnect. */
   disposed: boolean;
+
+  // ── Read store (populated from Baileys events on the live socket) ──
+  /** jid → chat, from messaging-history.set / chats.upsert / chats.update */
+  chats: Map<string, Chat>;
+  /** message key → message, from messaging-history.set / messages.upsert */
+  messages: Map<string, WAMessage>;
+  /** jid → contact, from messaging-history.set / contacts.upsert / contacts.update */
+  contacts: Map<string, Contact>;
 }
 
 // ──────────────────────────────────────────────
@@ -58,6 +70,7 @@ const DEFAULT_SESSIONS_DIR = ".whatsapp-sessions";
 const DEFAULT_RECONNECT_DELAY_MS = 3_000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const MAX_RECONNECT_ATTEMPTS = 10;
+const MAX_STORED_MESSAGES = 5_000;
 
 // ──────────────────────────────────────────────
 //  Helpers
@@ -133,6 +146,9 @@ export class WhatsAppSessionManager {
       reconnectTimer: null,
       reconnectAttempts: 0,
       disposed: false,
+      chats: new Map(),
+      messages: new Map(),
+      contacts: new Map(),
     };
     this.sessions.set(integrationId, entry);
 
@@ -226,6 +242,72 @@ export class WhatsAppSessionManager {
     return this.toSessionInfo(entry);
   }
 
+  // ── Read store accessors ────────────────────
+
+  /**
+   * Chats currently in the live session's store, most recent first.
+   * Returns [] until the history sync has delivered data. Reads the same
+   * socket's store — never creates a second session.
+   */
+  getChats(integrationId: string): Chat[] {
+    const entry = this.getRequiredEntry(integrationId);
+    return Array.from(entry.chats.values()).sort(
+      (a, b) =>
+        normalizeNumber(b.lastMessageRecvTimestamp ?? b.conversationTimestamp) -
+        normalizeNumber(a.lastMessageRecvTimestamp ?? a.conversationTimestamp),
+    );
+  }
+
+  /**
+   * Messages for a single chat (jid), most recent first, optionally limited.
+   */
+  getMessages(integrationId: string, chatId: string, limit = 50): WAMessage[] {
+    const entry = this.getRequiredEntry(integrationId);
+    const messages = Array.from(entry.messages.values())
+      .filter((m) => m.key?.remoteJid === chatId)
+      .sort((a, b) => normalizeNumber(b.messageTimestamp) - normalizeNumber(a.messageTimestamp));
+    return limit > 0 ? messages.slice(0, limit) : messages;
+  }
+
+  /**
+   * Case-insensitive text search over the messages in the live session's store
+   * (conversation text, extended text, and media captions).
+   */
+  searchMessages(integrationId: string, query: string): WAMessage[] {
+    const entry = this.getRequiredEntry(integrationId);
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return Array.from(entry.messages.values())
+      .filter((m) => extractMessageText(m).toLowerCase().includes(q))
+      .sort((a, b) => normalizeNumber(b.messageTimestamp) - normalizeNumber(a.messageTimestamp))
+      .slice(0, 100);
+  }
+
+  /** The contact name for a jid (1:1 chats), or null when unknown. */
+  getContactName(integrationId: string, jid: string): string | null {
+    const entry = this.getRequiredEntry(integrationId);
+    const contact = entry.contacts.get(jid);
+    return contact?.name ?? contact?.notify ?? null;
+  }
+
+  // ── Store helpers ───────────────────────────
+
+  /** Dedupe key for a stored message (chat + direction + id). */
+  private static messageKey(msg: WAMessage): string {
+    return `${msg.key?.remoteJid ?? "?"}|${msg.key?.fromMe ? "out" : "in"}|${msg.key?.id ?? "?"}`;
+  }
+
+  /** Insert a message into the store, evicting the oldest when over the cap. */
+  private addMessage(entry: SessionEntry, msg: WAMessage): void {
+    entry.messages.set(WhatsAppSessionManager.messageKey(msg), msg);
+    if (entry.messages.size > MAX_STORED_MESSAGES) {
+      const oldest = Array.from(entry.messages.values()).sort(
+        (a, b) => normalizeNumber(a.messageTimestamp) - normalizeNumber(b.messageTimestamp),
+      )[0];
+      if (oldest) entry.messages.delete(WhatsAppSessionManager.messageKey(oldest));
+    }
+  }
+
   // ── Internals ───────────────────────────────
 
   /**
@@ -265,6 +347,77 @@ export class WhatsAppSessionManager {
 
     socket.ev.on("connection.update", (update) => {
       this.handleConnectionUpdate(integrationId, entry, update);
+    });
+
+    // ── Read store ────────────────────────────────────────
+    // Populate the in-memory chat/message/contact store from Baileys events so
+    // the WhatsApp read endpoints (chats/messages/search) can serve data from
+    // the SAME live session — no second socket and no OAuth tokens. The full
+    // history sync (syncFullHistory) emits messaging-history.set on connect;
+    // messages.upsert keeps the store current while connected. After a server
+    // restart, the restored session re-syncs and repopulates this store.
+    socket.ev.on("messaging-history.set", ({ chats, messages, contacts }) => {
+      if (entry.disposed) return;
+      entry.chats.clear();
+      for (const chat of chats) {
+        if (chat.id) entry.chats.set(chat.id, chat);
+      }
+      entry.contacts.clear();
+      for (const contact of contacts) {
+        if (contact.id) entry.contacts.set(contact.id, contact);
+      }
+      entry.messages.clear();
+      for (const msg of messages) {
+        this.addMessage(entry, msg);
+      }
+      logger.debug(
+        "WhatsAppSessionManager: history store updated",
+        logMeta({ integrationId, chats: entry.chats.size, messages: entry.messages.size }),
+      );
+    });
+
+    socket.ev.on("messages.upsert", ({ messages }) => {
+      if (entry.disposed) return;
+      for (const msg of messages) {
+        this.addMessage(entry, msg);
+      }
+    });
+
+    socket.ev.on("chats.upsert", (chats) => {
+      if (entry.disposed) return;
+      for (const chat of chats) {
+        if (chat.id) entry.chats.set(chat.id, chat);
+      }
+    });
+
+    socket.ev.on("chats.update", (updates) => {
+      if (entry.disposed) return;
+      for (const update of updates) {
+        if (!update.id) continue;
+        const existing = entry.chats.get(update.id);
+        entry.chats.set(update.id, existing ? { ...existing, ...update } as Chat : update as Chat);
+      }
+    });
+
+    socket.ev.on("chats.delete", (ids) => {
+      if (entry.disposed) return;
+      for (const id of ids) entry.chats.delete(id);
+    });
+
+    socket.ev.on("contacts.upsert", (contacts) => {
+      if (entry.disposed) return;
+      for (const contact of contacts) {
+        if (contact.id) entry.contacts.set(contact.id, contact);
+      }
+    });
+
+    socket.ev.on("contacts.update", (updates) => {
+      if (entry.disposed) return;
+      for (const update of updates) {
+        if (!update.id) continue;
+        const existing = entry.contacts.get(update.id);
+        entry.contacts.set(update.id, existing ? { ...existing, ...update } as Contact : update as Contact);
+      }
     });
 
     logger.info("WhatsAppSessionManager: socket created", logMeta({ integrationId }));

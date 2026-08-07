@@ -25,10 +25,6 @@ export const mcpToolsByPlatform: Record<string, McpTool[]> = {
     { id: "gh-issues", name: "Issues", description: "Track and manage GitHub issues" },
     { id: "gh-commits", name: "Commits", description: "View commit history and diffs" },
   ],
-  slack: [
-    { id: "slack-read", name: "Read Channels", description: "Read Slack channel messages" },
-    { id: "slack-send", name: "Send Messages", description: "Send messages to Slack channels" },
-  ],
   discord: [
     { id: "discord-read", name: "Read Channels", description: "Read Discord channel messages" },
   ],
@@ -93,18 +89,6 @@ export const integrationPlatforms: IntegrationConfig[] = [
     lastSync: null,
     account: null,
     accentColor: "#24292f",
-  },
-  {
-    id: "slack",
-    name: "Slack",
-    description: "Read channel messages, stay on top of team conversations, and get AI summaries.",
-    category: "Messaging",
-    authenticationType: "oauth",
-    status: "not-connected",
-    permissions: "read",
-    lastSync: null,
-    account: null,
-    accentColor: "#4a154b",
   },
   {
     id: "discord",

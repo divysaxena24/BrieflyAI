@@ -1,11 +1,12 @@
-import { AppError } from "@/lib/errors";
-import { logger } from "@/lib/logger";
+// ──────────────────────────────────────────────
+//  WhatsApp services barrel
+//  Reusable session layer + read service.
+// ──────────────────────────────────────────────
 
-export async function listWhatsappConversations() {
-  logger.debug("WhatsApp: listWhatsappConversations called (placeholder)");
-  throw new AppError("WhatsApp service not implemented", 501, "not_implemented");
-}
+export * from "./whatsappService";
+export * from "./whatsappClient";
+export * from "./whatsappUtils";
 
-export const whatsappService = { listWhatsappConversations };
-
-export default whatsappService;
+export { default as WhatsAppService } from "./whatsappService";
+export { default as WhatsAppClient } from "./whatsappClient";
+export { whatsappSessionManager } from "./whatsappSessionManager";

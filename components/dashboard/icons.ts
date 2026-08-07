@@ -31,7 +31,6 @@ import {
   Activity,
   CheckCircle2,
   Code2,
-  Hash,
   MessageCircle,
   HardDrive,
   Loader2,
@@ -100,7 +99,6 @@ export const TelegramSendIcon = resolveIcon(["TelegramIcon", "Send01Icon"], Send
 export const OutlookCalendarIcon = resolveIcon(["Calendar01Icon", "Calendar02Icon font"], Calendar);
 export const GoogleCalendarIcon = resolveIcon(["Calendar02Icon", "Calendar01Icon"], Calendar);
 export const GithubIcon = resolveIcon(["GithubIcon", "BrandGithubIcon"], Code2);
-export const SlackIcon = resolveIcon(["SlackIcon", "HashtagIcon"], Hash);
 export const DiscordIcon = resolveIcon(["DiscordIcon", "GameIcon"], MessageCircle);
 export const GoogleDriveIcon = resolveIcon(["DriveIcon", "FolderCloudIcon"], HardDrive);
 export const ClockReminderIcon = resolveIcon(["Clock01Icon", "Clock02Icon"], Clock);

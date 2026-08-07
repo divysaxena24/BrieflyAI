@@ -1,5 +1,5 @@
 
-export type ProviderId = string; // e.g. 'gmail', 'github', 'slack'
+export type ProviderId = string; // e.g. 'gmail', 'github', 'discord'
 
 export type ProviderConfiguration = Record<string, unknown>;
 

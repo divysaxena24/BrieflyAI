@@ -18,8 +18,6 @@ export const GET = withHandler(async (request: Request) => {
   const validated = validateSchema(telegramMessagesSchema, payload);
   logger.info("Telegram messages validated", { chatId: validated.chatId, limit: validated.limit });
 
-  // TODO(phase-4d): wire `limit` into TelegramService.listMessages() once it
-  // supports it — currently validated for API contract only (forward-compatible).
-  const res = await TelegramService.listMessages(validated.chatId);
+  const res = await TelegramService.listMessages(validated.chatId, validated.limit);
   return { message: "Message list", data: res };
 });

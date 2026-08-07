@@ -24,9 +24,10 @@ export const GET = withHandler(async (request: Request) => {
     limit: validated.limit,
   });
 
-  // TODO(phase-4d): wire `chatIds`/`limit` into TelegramService.searchMessages()
-  // once it supports them — currently validated for API contract only
-  // (forward-compatible).
-  const res = await TelegramService.searchMessages({ query: validated.query });
+  const res = await TelegramService.searchMessages({
+    query: validated.query,
+    chatIds: validated.chatIds,
+    limit: validated.limit,
+  });
   return { message: "Message search results", data: res };
 });

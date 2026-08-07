@@ -14,7 +14,6 @@ export function getProviderDisplayName(id: ProviderId) {
     "google-calendar": "Google Calendar",
     "google-drive": "Google Drive",
     github: "GitHub",
-    slack: "Slack",
     discord: "Discord",
     telegram: "Telegram",
     whatsapp: "WhatsApp",

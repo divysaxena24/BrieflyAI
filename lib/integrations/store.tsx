@@ -119,6 +119,20 @@ const OAUTH_ROUTES: Record<string, { connect: string; disconnect: string }> = {
 };
 
 /**
+ * OAuth platforms that show a confirmation dialog before the browser redirect.
+ * The user reads an explanation of the OAuth flow and permissions, then clicks
+ * "Continue" to trigger the redirect. Currently only Discord; GitHub and Google
+ * platforms may be added here in the future.
+ *
+ * These platforms are still in OAUTH_ROUTES (they use OAuth redirects), but
+ * instead of redirecting immediately on connectPlatform(), they open the shared
+ * OAuthConnectDialog first.
+ */
+export const OAUTH_CONFIRM_ROUTES: Record<string, { connect: string; disconnect: string }> = {
+  discord: { connect: "discord-connect", disconnect: "discord-disconnect" },
+};
+
+/**
  * API route segment per bot-token platform (the single source of truth for
  * which platforms use a paste-a-token flow instead of OAuth). Telegram is the
  * first bot-token platform; future providers only add an entry here and reuse
@@ -148,6 +162,14 @@ const PAIRING_CODE_ROUTES: Record<string, { connect: string; disconnect: string 
  */
 function isOAuthPlatform(platformId: string): boolean {
   return Object.hasOwn(OAUTH_ROUTES, platformId);
+}
+
+/**
+ * Determine whether a platform uses OAuth with a confirmation dialog before
+ * the browser redirect. These platforms open the shared OAuthConnectDialog.
+ */
+function isOAuthConfirmPlatform(platformId: string): boolean {
+  return Object.hasOwn(OAUTH_CONFIRM_ROUTES, platformId);
 }
 
 /**
@@ -300,10 +322,21 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
         return;
       }
 
+      if (isOAuthConfirmPlatform(platformId)) {
+        // OAuth platforms with confirmation dialog: open the dialog instead of
+        // redirecting immediately. The dialog explains the flow and permissions;
+        // when the user clicks "Continue with Discord", it calls
+        // connectPlatform() again — but this time the platform is intercepted
+        // by the OAuth branch below (isOAuthConfirmPlatform is false because
+        // the dialog is already open), so the redirect fires.
+        openConnectDialog(platformId);
+        return;
+      }
+
       if (isOAuthPlatform(platformId)) {
-        // OAuth platforms (Google/GitHub): redirect the browser — the callback will
-        // redirect back and the store refetches status. Only redirect when status
-        // is not-connected (confirmed above).
+        // OAuth platforms (Google/GitHub/Discord-after-confirmation): redirect
+        // the browser — the callback will redirect back and the store refetches
+        // status. Only redirect when status is not-connected (confirmed above).
         window.location.href = buildConnectUrl(platformId, window.location.pathname);
         return;
       }

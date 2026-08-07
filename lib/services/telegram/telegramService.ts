@@ -140,6 +140,10 @@ export interface ListMessagesResult {
 export interface SearchMessagesParams {
   /** Required — the text to search for (case-insensitive match on message text). */
   query: string;
+  /** Optional — scope the search to specific chat ids. */
+  chatIds?: string[];
+  /** Optional — max messages to return (clamped to 100). */
+  limit?: number;
 }
 
 export interface SearchMessagesResult {
@@ -385,7 +389,7 @@ export class TelegramService {
    * messages that belong to the requested chat (a bot can only see messages it
    * has received updates from).
    */
-  static async listMessages(chatId: string): Promise<ListMessagesResult> {
+  static async listMessages(chatId: string, limit?: number): Promise<ListMessagesResult> {
     logger.info("TelegramService: listMessages request received", logMeta({ chatId }));
     const { client, integration } = await TelegramService.createClientForUser();
     try {
@@ -395,7 +399,8 @@ export class TelegramService {
       const messages = updates
         .flatMap((u) => TelegramService.collectMessages(u))
         .filter((m) => m.chat?.id !== undefined && String(m.chat.id) === String(chatId))
-        .map((m) => TelegramService.toMessageSummary(m));
+        .map((m) => TelegramService.toMessageSummary(m))
+        .slice(0, limit ?? 100);
 
       logger.info("TelegramService: messages returned", logMeta({ chatId, count: messages.length }));
       // Log activity asynchronously — never block the response
@@ -430,11 +435,23 @@ export class TelegramService {
 
     const { integration } = await TelegramService.createClientForUser();
     try {
-      const { chats } = await TelegramService.listChats();
+      let chats: ChatSummary[];
+      if (params.chatIds && params.chatIds.length > 0) {
+        // Use the caller-supplied chat ids directly — skip fetching all chats
+        chats = params.chatIds.map((id) => ({
+          id: Number(id),
+          title: id,
+          username: null,
+          type: "unknown",
+        }));
+      } else {
+        const result = await TelegramService.listChats();
+        chats = result.chats;
+      }
 
       const matches: MessageSummary[] = [];
       for (const chat of chats) {
-        const { messages } = await TelegramService.listMessages(String(chat.id));
+        const { messages } = await TelegramService.listMessages(String(chat.id), params.limit);
         for (const m of messages) {
           if (m.text.toLowerCase().includes(q)) matches.push(m);
         }
