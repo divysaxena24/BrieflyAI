@@ -10,6 +10,14 @@
  * The source reuses the Context Engine's own `MEMORY_SOURCE_ID` /
  * `MEMORY_SOURCE_PRIORITY` constants and the memory layer's `rankMemories`
  * scorer — no duplicated scoring or conversion logic.
+ *
+ * Note: `MEMORY_SOURCE_ID` is shared with the Context Engine's async
+ * `MemorySource` (see `lib/context/sources/memorySource.ts`). The two paths
+ * are alternatives, not complements — `MemoryContextSource` is wired by the
+ * memory engine's production composition, while `MemorySource` is wired by
+ * `createContextEngine({ memoryService })` via `MemoryEngineService`. Wiring
+ * both into the same engine would produce duplicate-id contexts that the
+ * deduplicator would treat as the same items.
  */
 
 import { ContextSourceBase } from "@/lib/context/sources/contextSource";

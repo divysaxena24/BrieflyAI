@@ -5,7 +5,7 @@ import {
   getProductionMemoryEngine,
 } from "@/lib/memory/production";
 import { MemoryRepository } from "@/lib/memory/repository";
-import { MemoryContextSource, memoryToContext } from "@/lib/memory/context";
+import { MemoryContextSource } from "@/lib/memory/context";
 import { rankMemories } from "@/lib/memory/ranker";
 import { MemoryRetriever } from "@/lib/memory/retrieval";
 import { createMemory, type CreateMemoryInput, type Memory } from "@/lib/memory/types";
@@ -37,7 +37,7 @@ function makeMemory(id: string, overrides: Partial<CreateMemoryInput> = {}): Cre
 async function runPipeline(
   memories: readonly Memory[],
   query: string,
-): Promise<{ prompt: string; contexts: ReturnType<typeof memoryToContext>[] }> {
+): Promise<string> {
   const repository = new MemoryRepository(memories);
   const engine = new ContextEngine(
     new ContextBuilder([new MemoryContextSource(repository)]),
@@ -47,12 +47,11 @@ async function runPipeline(
     new ContextAssembler(),
     new PromptBuilder(),
   );
-  const prompt = await engine.buildPrompt({
+  return engine.buildPrompt({
     retrievalQuery: { userId: "u1", query },
     tokenBudget: 4000,
     userQuery: query,
   });
-  return { prompt, contexts: [] };
 }
 
 // ──────────────────────────────────────────────
@@ -89,7 +88,7 @@ describe("full flow", () => {
     expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
 
     // 3. context conversion + Context Engine + prompt builder
-    const { prompt } = await runPipeline(engine.listMemories(), "coffee");
+    const prompt = await runPipeline(engine.listMemories(), "coffee");
     expect(prompt).toContain("Coffee preference");
     expect(prompt).toContain("oat milk");
     expect(prompt).toContain("================ ASSISTANT ================");
@@ -192,7 +191,7 @@ describe("large datasets", () => {
     expect(ranked).toHaveLength(1000);
     expect(ranked[0].score).toBeGreaterThanOrEqual(ranked[999].score);
 
-    const { prompt } = await runPipeline(engine.listMemories(), "fact 7");
+    const prompt = await runPipeline(engine.listMemories(), "fact 7");
     expect(prompt).toContain("=== CONTEXT START ===");
   });
 
@@ -223,7 +222,7 @@ describe("determinism and immutability", () => {
     ];
     const first = await runPipeline(memories, "facts");
     const second = await runPipeline(memories, "facts");
-    expect(first.prompt).toBe(second.prompt);
+    expect(first).toBe(second);
   });
 
   it("never mutates engine state through the pipeline", async () => {

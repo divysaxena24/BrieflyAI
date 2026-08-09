@@ -9,7 +9,6 @@ import {
 import { MemoryRepository } from "@/lib/memory/repository";
 import { MemoryNotFoundError } from "@/lib/memory/repository";
 import { createMemory, type CreateMemoryInput, type Memory } from "@/lib/memory/types";
-import { conversationToContext } from "@/lib/conversation/contextRestorer";
 import type { Conversation } from "@/lib/conversation/types";
 
 // ──────────────────────────────────────────────
@@ -281,7 +280,3 @@ describe("buildMemoryPrompt", () => {
     expect(prompt).toContain("================ ASSISTANT ================");
   });
 });
-
-// Re-export guard: keep conversationToContext import referenced for parity
-// with the conversation production tests.
-void conversationToContext;
