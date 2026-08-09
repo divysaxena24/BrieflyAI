@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrieflyAI — Your AI Personal Agent",
+  title: "BrieflyAI - Your AI Personal Agent",
   description:
     "Connect your Gmail, WhatsApp, Telegram, and Outlook accounts. BrieflyAI generates smart summaries, sets reminders, and keeps you organized across all your platforms.",
   keywords: [
