@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import os from "os";
 import path from "path";
 import makeWASocket, {
   DisconnectReason,
@@ -66,7 +67,7 @@ interface SessionEntry {
 //  Constants
 // ──────────────────────────────────────────────
 
-const DEFAULT_SESSIONS_DIR = ".whatsapp-sessions";
+const DEFAULT_SESSIONS_DIR = path.join(os.tmpdir(), "briefly-whatsapp-sessions");
 const DEFAULT_RECONNECT_DELAY_MS = 3_000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
 const MAX_RECONNECT_ATTEMPTS = 10;
@@ -109,7 +110,7 @@ export class WhatsAppSessionManager {
   private readonly reconnectDelayMs: number;
 
   constructor(options?: { sessionsDir?: string; reconnectDelayMs?: number }) {
-    this.sessionsDir = options?.sessionsDir ?? path.join(process.cwd(), DEFAULT_SESSIONS_DIR);
+    this.sessionsDir = options?.sessionsDir ?? DEFAULT_SESSIONS_DIR;
     this.reconnectDelayMs = options?.reconnectDelayMs ?? DEFAULT_RECONNECT_DELAY_MS;
   }
 
