@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  output: "standalone",
   /**
    * Optional runtime image libraries used by Baileys for media thumbnails.
    * Baileys itself must stay BUNDLED: it is ESM-only, and externalizing it

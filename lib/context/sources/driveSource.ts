@@ -33,7 +33,7 @@ export const DRIVE_SOURCE_PRIORITY = 20;
 export const DEFAULT_DRIVE_FILE_RELEVANCE = 0.5;
 
 /** Importance levels shared with the context pipeline. */
-export type ContextImportance = "low" | "normal" | "high" | "critical";
+type ContextImportance = "low" | "normal" | "high" | "critical";
 
 /** "drive" is a source-level kind; `ContextMetadata.kind` lacks the literal. */
 const DRIVE_METADATA_KIND = "drive" as unknown as ContextMetadata["kind"];
@@ -52,7 +52,7 @@ export type DriveMetadata = ContextMetadata & {
 /**
  * A single Drive file returned by a `DriveService`.
  */
-export interface DriveFile {
+export interface DriveFile extends Record<string, unknown> {
   /** Stable provider-side id of the file. */
   id: string;
   /** File name. */

@@ -32,7 +32,8 @@ export type MetricDomain =
   | "context"
   | "llm"
   | "queue"
-  | "events";
+  | "events"
+  | "notifications";
 
 /** Every metric domain in a stable canonical order. */
 export const METRIC_DOMAINS: readonly MetricDomain[] = Object.freeze([
@@ -52,6 +53,7 @@ export const METRIC_DOMAINS: readonly MetricDomain[] = Object.freeze([
   "llm",
   "queue",
   "events",
+  "notifications",
 ]);
 
 /** The kind of a metric sample. */
@@ -271,6 +273,7 @@ export function metricStatisticsByDomain(
     llm: aggregate([]),
     queue: aggregate([]),
     events: aggregate([]),
+    notifications: aggregate([]),
   };
   for (const domain of METRIC_DOMAINS) {
     result[domain] = aggregate(

@@ -28,7 +28,11 @@
 
 import { hashString } from "@/lib/hash";
 
-/** The persistable database collections (six engines + events + metadata). */
+/**
+ * The persistable database collections. The six Phase 5J engines plus the
+ * events/metadata bookkeeping, extended by Phase 6D with the notification
+ * collections (each notification-domain model gets its own collection).
+ */
 export type DatabaseCollectionKind =
   | "memory"
   | "conversation"
@@ -37,7 +41,21 @@ export type DatabaseCollectionKind =
   | "action"
   | "workflow"
   | "event"
-  | "metadata";
+  | "metadata"
+  | "notification"
+  | "notification_delivery"
+  | "notification_attempt"
+  | "notification_history"
+  | "notification_failure"
+  | "notification_deadletter"
+  | "notification_batch"
+  | "notification_queue"
+  | "notification_retry"
+  | "notification_template"
+  | "notification_preference"
+  | "notification_subscription"
+  | "notification_rule"
+  | "notification_metric";
 
 /** Every persistable collection, in a stable canonical order. */
 export const DATABASE_COLLECTION_KINDS: readonly DatabaseCollectionKind[] = Object.freeze([
@@ -49,6 +67,20 @@ export const DATABASE_COLLECTION_KINDS: readonly DatabaseCollectionKind[] = Obje
   "workflow",
   "event",
   "metadata",
+  "notification",
+  "notification_delivery",
+  "notification_attempt",
+  "notification_history",
+  "notification_failure",
+  "notification_deadletter",
+  "notification_batch",
+  "notification_queue",
+  "notification_retry",
+  "notification_template",
+  "notification_preference",
+  "notification_subscription",
+  "notification_rule",
+  "notification_metric",
 ]);
 
 /** A database collection descriptor (one per engine collection). */

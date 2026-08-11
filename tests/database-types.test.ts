@@ -579,7 +579,7 @@ describe("time helpers", () => {
 });
 
 describe("DATABASE_COLLECTION_KINDS", () => {
-  it("is frozen with all eight collections in canonical order", () => {
+  it("is frozen with every collection in canonical order", () => {
     expect(Object.isFrozen(DATABASE_COLLECTION_KINDS)).toBe(true);
     expect(DATABASE_COLLECTION_KINDS).toEqual([
       "memory",
@@ -590,6 +590,20 @@ describe("DATABASE_COLLECTION_KINDS", () => {
       "workflow",
       "event",
       "metadata",
+      "notification",
+      "notification_delivery",
+      "notification_attempt",
+      "notification_history",
+      "notification_failure",
+      "notification_deadletter",
+      "notification_batch",
+      "notification_queue",
+      "notification_retry",
+      "notification_template",
+      "notification_preference",
+      "notification_subscription",
+      "notification_rule",
+      "notification_metric",
     ]);
   });
 });

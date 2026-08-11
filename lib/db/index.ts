@@ -51,8 +51,21 @@ function getClient() {
   return globalForDb._dbClient;
 }
 
-/** Singleton Drizzle ORM database client. */
-export const db = getClient();
+/**
+ * Lazily resolved Drizzle ORM database client.
+ *
+ * Important for Next.js builds: route modules may be evaluated at build time
+ * while collecting page data, before runtime-only environment variables like
+ * `DATABASE_URL` are available inside the image. The proxy defers actual
+ * client creation until the first real DB operation instead of at module load.
+ */
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(_target, prop, receiver) {
+    const client = getClient() as object;
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
 
 /**
  * Raw SQL client for transactions and advanced queries.

@@ -31,7 +31,7 @@ export const DEFAULT_EMAIL_RELEVANCE = 0.5;
 /**
  * A single email returned by a `GmailService`.
  */
-export interface GmailEmail {
+export interface GmailEmail extends Record<string, unknown> {
   /** Stable provider-side id of the email. */
   id: string;
   /** Email subject line. */

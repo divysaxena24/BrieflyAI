@@ -29,12 +29,12 @@ export class MockContextSource extends ContextSourceBase {
   }
 
   /** Returns the configured availability flag. */
-  async isAvailable(): Promise<boolean> {
+  async isAvailable(_userId: string): Promise<boolean> {
     return this.available;
   }
 
   /** Returns a deep clone of the configured contexts. Never mutates internals. */
-  async retrieve(): Promise<Context[]> {
+  async retrieve(_query: import("@/lib/context/types").RetrievalQuery): Promise<Context[]> {
     return structuredClone(this.contexts);
   }
 }

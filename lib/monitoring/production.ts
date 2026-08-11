@@ -219,6 +219,7 @@ export class MonitoringEngine {
     readonly kind: SpanKind;
     readonly name: string;
     readonly startedAt: string;
+    readonly attributes?: Readonly<Record<string, unknown>>;
   }): { engine: MonitoringEngine; span: Span } {
     const { store, span } = this._traces.start(input);
     this._traces = store;

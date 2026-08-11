@@ -28,7 +28,7 @@ export const DEFAULT_MEMORY_RELEVANCE = 0.5;
 /**
  * A single long-term memory item returned by a `MemoryService`.
  */
-export interface MemoryItem {
+export interface MemoryItem extends Record<string, unknown> {
   /** Stable provider-side id of the memory. */
   id: string;
   /** Short human-readable title for the memory. */

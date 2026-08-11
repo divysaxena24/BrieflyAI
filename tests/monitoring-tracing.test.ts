@@ -242,6 +242,7 @@ describe("SPAN_KINDS", () => {
       "queue",
       "llm",
       "event",
+      "notification",
     ];
     expect(SPAN_KINDS).toEqual(kinds);
   });

@@ -246,6 +246,7 @@ describe("PROFILE_STAGES", () => {
       "conversation",
       "context",
       "llm",
+      "notification",
     ];
     expect(PROFILE_STAGES).toEqual(stages);
   });

@@ -34,7 +34,8 @@ export type AlertRuleType =
   | "tool_failure"
   | "planner_failure"
   | "digest_failure"
-  | "action_failure";
+  | "action_failure"
+  | "notification_failure";
 
 /** Every alert rule type in a stable canonical order. */
 export const ALERT_RULE_TYPES: readonly AlertRuleType[] = Object.freeze([
@@ -48,6 +49,7 @@ export const ALERT_RULE_TYPES: readonly AlertRuleType[] = Object.freeze([
   "planner_failure",
   "digest_failure",
   "action_failure",
+  "notification_failure",
 ]);
 
 /** The lifecycle state of an alert. */
@@ -230,6 +232,7 @@ export function alertStatistics(alerts: readonly Alert[]): AlertStatistics {
     planner_failure: 0,
     digest_failure: 0,
     action_failure: 0,
+    notification_failure: 0,
   };
   const bySeverity: Record<AlertSeverity, number> = {
     info: 0,
@@ -533,6 +536,7 @@ export function defaultSeverityFor(type: AlertRuleType): AlertSeverity {
     case "queue_overflow":
     case "tool_failure":
     case "planner_failure":
+    case "notification_failure":
       return "warning";
     default:
       return "warning";

@@ -29,7 +29,7 @@ export abstract class ContextSourceBase implements ContextSource {
    * Whether the source can serve context for a user right now.
    * Defaults to true; override in subclasses that depend on a connection.
    */
-  async isAvailable(): Promise<boolean> {
+  async isAvailable(_userId: string): Promise<boolean> {
     return true;
   }
 

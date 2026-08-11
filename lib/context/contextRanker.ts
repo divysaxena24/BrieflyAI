@@ -14,12 +14,17 @@ import type { Context, RankedContext, RetrievalQuery } from "./types";
 export const RECENCY_HALF_LIFE_MS = 24 * 60 * 60 * 1000;
 
 /** Default weights of the four ranking signals (sum to 1). */
-export const RANKING_WEIGHTS = Object.freeze({
+export const RANKING_WEIGHTS: Readonly<{
+  recency: number;
+  importance: number;
+  sourcePriority: number;
+  intent: number;
+}> = Object.freeze({
   recency: 0.35,
   importance: 0.25,
   sourcePriority: 0.2,
   intent: 0.2,
-}) as const;
+});
 
 /** Score per `metadata.importance` value. */
 export const IMPORTANCE_SCORES: Readonly<Record<string, number>> = Object.freeze({

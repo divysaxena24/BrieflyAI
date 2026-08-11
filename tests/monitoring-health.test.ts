@@ -245,6 +245,7 @@ describe("probe helpers / constants", () => {
       "api",
       "event_bus",
       "monitoring_engine",
+      "notification_engine",
     ];
     expect(HEALTH_COMPONENTS).toEqual(components);
   });

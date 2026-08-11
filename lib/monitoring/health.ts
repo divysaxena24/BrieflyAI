@@ -27,7 +27,8 @@ export type HealthComponent =
   | "tool_registry"
   | "api"
   | "event_bus"
-  | "monitoring_engine";
+  | "monitoring_engine"
+  | "notification_engine";
 
 /** Every health component in a stable canonical order. */
 export const HEALTH_COMPONENTS: readonly HealthComponent[] = Object.freeze([
@@ -44,6 +45,7 @@ export const HEALTH_COMPONENTS: readonly HealthComponent[] = Object.freeze([
   "api",
   "event_bus",
   "monitoring_engine",
+  "notification_engine",
 ]);
 
 /** The status of a health check. */

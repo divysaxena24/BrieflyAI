@@ -282,6 +282,7 @@ describe("snapshot / defaults / constants", () => {
       "planner_failure",
       "digest_failure",
       "action_failure",
+      "notification_failure",
     ];
     expect(ALERT_RULE_TYPES).toEqual(types);
   });

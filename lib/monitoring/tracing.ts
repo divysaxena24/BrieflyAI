@@ -29,7 +29,8 @@ export type SpanKind =
   | "persistence"
   | "queue"
   | "llm"
-  | "event";
+  | "event"
+  | "notification";
 
 /** Every span kind in a stable canonical order. */
 export const SPAN_KINDS: readonly SpanKind[] = Object.freeze([
@@ -50,6 +51,7 @@ export const SPAN_KINDS: readonly SpanKind[] = Object.freeze([
   "queue",
   "llm",
   "event",
+  "notification",
 ]);
 
 /** A lightweight reference to a span (for linking). */
@@ -271,6 +273,7 @@ export function traceStatistics(spans: readonly Span[]): TraceStatistics {
     queue: 0,
     llm: 0,
     event: 0,
+    notification: 0,
   };
   let openSpans = 0;
   let finishedSpans = 0;

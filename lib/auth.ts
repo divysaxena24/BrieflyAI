@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import { createUser } from "@/lib/db/queries";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,6 +85,7 @@ export async function saveUserToDatabase(user: {
   provider?: string;
 }): Promise<void> {
   try {
+    const { createUser } = await import("@/lib/db/queries");
     await createUser({
       authUserId: user.authUserId,
       email: user.email,

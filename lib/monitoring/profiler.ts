@@ -30,7 +30,8 @@ export type ProfileStage =
   | "job"
   | "conversation"
   | "context"
-  | "llm";
+  | "llm"
+  | "notification";
 
 /** Every profile stage in a stable canonical order. */
 export const PROFILE_STAGES: readonly ProfileStage[] = Object.freeze([
@@ -50,6 +51,7 @@ export const PROFILE_STAGES: readonly ProfileStage[] = Object.freeze([
   "conversation",
   "context",
   "llm",
+  "notification",
 ]);
 
 /** A single immutable profiling sample. */
@@ -234,6 +236,7 @@ export function profileStatisticsByStage(
     conversation: aggregate([]),
     context: aggregate([]),
     llm: aggregate([]),
+    notification: aggregate([]),
   };
   for (const stage of PROFILE_STAGES) {
     result[stage] = aggregate(

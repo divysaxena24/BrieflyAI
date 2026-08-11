@@ -95,7 +95,14 @@ export class DatabaseEngine {
 /** The default database scope used by the module singleton ("app"). */
 export const DEFAULT_DATABASE_SCOPE = "app";
 
-/** Every collection the database engine exposes repositories for. */
+/**
+ * Every collection the database engine exposes repositories for. This is the
+ * Phase 6A–6C surface only: the Phase 6D notification collections
+ * (`notification*`) are deliberately NOT repository-backed — they are
+ * managed at the driver level by `NotificationPersistence` (row-level
+ * snapshots under arbitrary scopes), so `engine.repository("notification")`
+ * throws by design.
+ */
 export const DATABASE_ENGINE_COLLECTIONS: readonly DatabaseCollectionKind[] = Object.freeze([
   "memory",
   "conversation",

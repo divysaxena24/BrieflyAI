@@ -31,7 +31,7 @@ export const DEFAULT_EVENT_RELEVANCE = 0.5;
 /**
  * A single calendar event returned by a `CalendarService`.
  */
-export interface CalendarEvent {
+export interface CalendarEvent extends Record<string, unknown> {
   /** Stable provider-side id of the event. */
   id: string;
   /** Event title. */

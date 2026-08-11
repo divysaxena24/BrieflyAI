@@ -34,7 +34,7 @@ export const GITHUB_SOURCE_PRIORITY = 40;
 export const DEFAULT_GITHUB_ITEM_RELEVANCE = 0.5;
 
 /** Importance levels shared with the context pipeline. */
-export type ContextImportance = "low" | "normal" | "high" | "critical";
+type ContextImportance = "low" | "normal" | "high" | "critical";
 
 /** "github" is a source-level kind; `ContextMetadata.kind` lacks the literal. */
 const GITHUB_METADATA_KIND = "github" as unknown as ContextMetadata["kind"];
@@ -56,7 +56,7 @@ export type GitHubMetadata = ContextMetadata & {
 /**
  * A single GitHub item returned by a `GitHubService`.
  */
-export interface GitHubItem {
+export interface GitHubItem extends Record<string, unknown> {
   /** Stable provider-side id of the item. */
   id: string;
   /** Item title (issue/PR title, commit subject). */
