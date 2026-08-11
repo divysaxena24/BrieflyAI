@@ -2,8 +2,8 @@
  * Phase 5J STEP 5 — event bus tests.
  */
 import { describe, expect, it } from "vitest";
-import { EventBus, type AppEventListener } from "@/lib/events/bus";
-import { createAppEvent, eventBuilders } from "@/lib/events/types";
+import { EventBus } from "@/lib/events/bus";
+import { eventBuilders } from "@/lib/events/types";
 
 const NOW = "2026-08-10T08:00:00.000Z";
 

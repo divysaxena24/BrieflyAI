@@ -12,7 +12,6 @@ import {
   createChannelRecipient,
   DELIVERY_CHANNELS,
   hashChannelRecipient,
-  type ChannelRecipient,
   type ChannelSender,
   type ChannelSendInput,
   type ChannelSendOutput,

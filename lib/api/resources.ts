@@ -13,6 +13,13 @@
  * caller-supplied through the injected clock `now`, so the layer stays
  * deterministic in tests.
  *
+ * Deterministic-id note: action/workflow/digest ids derive from
+ * name/type/trigger/priority/timestamps — not from content — so planning the
+ * same default-named action twice at the same `now` collides (the repository
+ * rejects the duplicate with a 409). Callers that plan repeated actions
+ * within one clock instant should pass distinct `name`s (or distinct
+ * timestamps) on their requests.
+ *
  * The wire→model conversion helpers (`toWorkflowAction`, `workflowFromWire`,
  * `triggerEventFromWire`) are the only place the validated HTTP bodies are
  * interpreted; the model creators remain the authoritative validators

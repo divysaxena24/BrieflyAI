@@ -15,6 +15,13 @@
       "when": 1785222504186,
       "tag": "0001_round_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786400317380,
+      "tag": "0002_phase6a_database_layer",
+      "breakpoints": true
     }
   ]
 }

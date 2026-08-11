@@ -142,7 +142,7 @@ export class PersistenceEngine {
    * Persist an engine's full collection under `(scope, kind)` (write-through
    * snapshot). Returns the stored collection.
    */
-  async save<TEngine, TRecord>(
+  async save<TEngine>(
     scope: string,
     kind: CollectionKind,
     engine: TEngine,
@@ -156,7 +156,7 @@ export class PersistenceEngine {
    * Full-replace semantics: identical to {@link save} — collections are
    * always persisted as whole snapshots, so replacing is the same write.
    */
-  async replace<TEngine, TRecord>(
+  async replace<TEngine>(
     scope: string,
     kind: CollectionKind,
     engine: TEngine,

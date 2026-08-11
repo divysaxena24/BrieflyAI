@@ -36,7 +36,7 @@ import {
 } from "@/lib/delivery/types";
 import { formatDigest } from "@/lib/digest/delivery";
 import { createWorkflow, createWorkflowStep } from "@/lib/workflows/types";
-import { createMemory, type CreateMemoryInput } from "@/lib/memory/types";
+import type { CreateMemoryInput } from "@/lib/memory/types";
 
 const NOW = "2026-08-10T00:00:00.000Z";
 const USER = "user-1";
@@ -100,18 +100,21 @@ class ThrowingStore implements PersistenceStore {
   }
 }
 
-/** Bulk-remember `count` deterministic memories. */
+/**
+ * Bulk-remember `count` deterministic memories. The inputs are plain
+ * `CreateMemoryInput` objects (NOT `createMemory` results — a `Memory`
+ * carries its title/createdAt under `metadata`, so re-using one as an input
+ * would store memories without those fields).
+ */
 function bulkMemories(count: number, prefix = "bulk"): CreateMemoryInput[] {
   const inputs: CreateMemoryInput[] = [];
   for (let index = 0; index < count; index += 1) {
-    inputs.push(
-      createMemory({
-        id: `mem-${prefix}-${index}`,
-        title: `${prefix} memory ${index}`,
-        content: `Content of ${prefix} memory number ${index}`,
-        createdAt: NOW,
-      }),
-    );
+    inputs.push({
+      id: `mem-${prefix}-${index}`,
+      title: `${prefix} memory ${index}`,
+      content: `Content of ${prefix} memory number ${index}`,
+      createdAt: NOW,
+    });
   }
   return inputs;
 }
@@ -170,6 +173,9 @@ describe("Phase 5J end-to-end", () => {
     const jobSummary = await api.runJob("bg-daily-digest", NOW);
     expect(jobSummary.completed).toBeGreaterThanOrEqual(1);
     expect(jobSummary.failed).toBe(0);
+    // The background digest job records a memory; snapshot the count so the
+    // restart-recovery assertion only accounts for the workflow's memory.
+    const memoryCountAfterJob = api.listMemories().length;
 
     // 8. Digest: build + publish.
     const digest = await api.buildDigest("morning", { userId: USER, now: NOW });
@@ -178,6 +184,11 @@ describe("Phase 5J end-to-end", () => {
     expect(api.getDigest(digest.id).metadata.status).toBe("published");
 
     // 9. Workflow: digest-triggered workflow with an action step.
+    // The action step uses an explicit, distinctly-named create_memory
+    // request: action ids are deterministic and derive from name/type/trigger/
+    // priority/timestamps (not content), so re-planning a default-named
+    // create_memory at the same `now` as the earlier pipeline plan would
+    // collide with the already-stored action.
     const workflow = api.registerWorkflow({
       name: "On digest published",
       trigger: { kind: "digest", digestId: digest.id, event: "published" },
@@ -185,7 +196,20 @@ describe("Phase 5J end-to-end", () => {
         createWorkflowStep({
           id: "s1",
           name: "Remember digest",
-          action: { kind: "action", intent: "remember the morning digest was published" },
+          action: {
+            kind: "action",
+            intent: "remember the morning digest was published",
+            requests: [
+              {
+                type: "create_memory",
+                name: "Remember morning digest",
+                input: {
+                  title: "Morning digest published",
+                  content: "The morning digest was published",
+                },
+              },
+            ],
+          },
         }),
       ],
       createdAt: NOW,
@@ -226,6 +250,7 @@ describe("Phase 5J end-to-end", () => {
     expect(missing.outcomes[0]?.error?.code).toBe("channel_sender_missing");
 
     // 11. Persistence + restart recovery (fresh facade over the same store).
+    const messageCount = api.getConversation("conv-1").messages.length;
     const { saved, errors } = await api.saveAll(USER);
     expect(saved).toHaveLength(6);
     expect(errors).toHaveLength(0);
@@ -234,9 +259,9 @@ describe("Phase 5J end-to-end", () => {
     expect(second.listMemories()).toHaveLength(0);
     const { errors: loadErrors } = await second.loadAll(USER);
     expect(loadErrors).toHaveLength(0);
-    expect(second.listMemories().length).toBe(memoryCountAfterPlan + 1);
+    expect(second.listMemories().length).toBe(memoryCountAfterJob + 1);
     expect(second.listConversations()).toHaveLength(1);
-    expect(second.getConversation("conv-1").messages.length).toBeGreaterThan(1);
+    expect(second.getConversation("conv-1").messages.length).toBe(messageCount);
     expect(second.listDigests()).toHaveLength(1);
     expect(second.getDigest(digest.id).id).toBe(digest.id);
     expect(second.listWorkflows()).toHaveLength(1);
@@ -324,9 +349,11 @@ describe("Phase 5J end-to-end", () => {
       steps: [
         createWorkflowStep({
           id: "bad",
-          name: "Unknown job",
-          // An unregistered job makes the job step handler throw at runtime.
-          action: { kind: "job", jobId: "no-such-job" },
+          name: "Malformed digest step",
+          // A digest step without a template makes the built-in digest
+          // handler throw at runtime — a genuine step failure. (An unknown
+          // job id would NOT fail: `runManual` skips unknown jobs.)
+          action: { kind: "digest" },
         }),
         createWorkflowStep({
           id: "good",

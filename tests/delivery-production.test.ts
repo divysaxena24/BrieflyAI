@@ -10,7 +10,6 @@ import {
 } from "@/lib/delivery/production";
 import { CHANNEL_SENDER_MISSING } from "@/lib/delivery/channels";
 import { createChannelRecipient, type ChannelSender } from "@/lib/delivery/types";
-import { createDigestDelivery } from "@/lib/digest/types";
 
 describe("production channel wiring", () => {
   it("creates an empty registry by default (documented stop condition)", () => {

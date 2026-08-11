@@ -62,22 +62,22 @@ export interface PersistenceAdapter<TEngine, TRecord> {
 }
 
 /** Adapter for the Memory Engine. */
-export interface MemoryAdapter extends PersistenceAdapter<MemoryEngine, Memory> {}
+export type MemoryAdapter = PersistenceAdapter<MemoryEngine, Memory>;
 
 /** Adapter for the Conversation Engine. */
-export interface ConversationAdapter extends PersistenceAdapter<ConversationEngine, Conversation> {}
+export type ConversationAdapter = PersistenceAdapter<ConversationEngine, Conversation>;
 
 /** Adapter for the Job Engine. */
-export interface JobAdapter extends PersistenceAdapter<JobEngine, Job> {}
+export type JobAdapter = PersistenceAdapter<JobEngine, Job>;
 
 /** Adapter for the Digest Engine. */
-export interface DigestAdapter extends PersistenceAdapter<DigestEngine, Digest> {}
+export type DigestAdapter = PersistenceAdapter<DigestEngine, Digest>;
 
 /** Adapter for the Action Engine. */
-export interface ActionAdapter extends PersistenceAdapter<ActionEngine, Action> {}
+export type ActionAdapter = PersistenceAdapter<ActionEngine, Action>;
 
 /** Adapter for the Workflow Engine. */
-export interface WorkflowAdapter extends PersistenceAdapter<WorkflowEngine, Workflow> {}
+export type WorkflowAdapter = PersistenceAdapter<WorkflowEngine, Workflow>;
 
 /** The Memory Engine adapter (kind "memory"). */
 export const memoryAdapter: MemoryAdapter = {

@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
+// Relative import (not the `@/` alias): tests/ is excluded from tsconfig.json,
+// so the editor's inferred project cannot resolve the `@/*` path mapping.
 import {
   extractMessageText,
   formatWhatsAppPhone,
   normalizeNumber,
   toIso,
-} from "@/lib/services/whatsapp/whatsappUtils";
+} from "../lib/services/whatsapp/whatsappUtils";
 import type { WAMessage } from "@whiskeysockets/baileys";
 
 /** Build a minimal WAMessage-like object for testing the text extractor. */

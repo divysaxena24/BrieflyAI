@@ -25,6 +25,16 @@
  * this is the application-level equivalent of `createProductionDigestSources`
  * (which is hardwired to the singletons and cannot be reused here without
  * modifying a previous phase).
+ *
+ * Reconciliation scope: the four composition roots hold the *same app-level
+ * engine instances* (the Action Engine is built over the app Digest/Job
+ * engines; the Workflow Engine over the app Action/Job/Digest engines), so
+ * state advanced inside a root — digests built, jobs settled, actions
+ * executed, workflows settled — is already visible on the app roots' own
+ * managers. Only the successor-applied engines (memory, conversation) can
+ * diverge inside the roots (each root applies its own successors), so
+ * `reconcile()` merges those back after every execution path that can write
+ * to them; the shared-instance invariant keeps the other four in sync.
  */
 
 import { ContextEngine } from "@/lib/context/engine";
@@ -36,22 +46,11 @@ import {
   DIGEST_CONTEXT_TOKEN_BUDGET,
   DIGEST_TOOL_TIMEOUT_MS,
   DigestEngine,
-  getProductionDigestEngine,
 } from "@/lib/digest/production";
 import type { DigestDataSources } from "@/lib/digest/builder";
-import {
-  JobEngine,
-  getProductionJobEngine,
-  type JobEngineOptions,
-} from "@/lib/jobs/production";
-import {
-  ActionEngine,
-  getProductionActionEngine,
-} from "@/lib/actions/production";
-import {
-  WorkflowEngine,
-  getProductionWorkflowEngine,
-} from "@/lib/workflows/production";
+import { JobEngine, type JobEngineOptions } from "@/lib/jobs/production";
+import { ActionEngine } from "@/lib/actions/production";
+import { WorkflowEngine } from "@/lib/workflows/production";
 import {
   ConversationEngine,
   createProductionConversationEngine,
@@ -104,17 +103,56 @@ export class ApplicationEngines {
   /** The Context Engine shared by every composition root (never replaced). */
   readonly context: ContextEngine;
 
+  /**
+   * The tool executor backing the digest sources. Stateless with respect to
+   * the engines (it executes plans through its registry), so it is built once
+   * and reused across every graph rebuild.
+   */
+  private readonly digestToolExecutor: ToolExecutor;
+
   private readonly now: () => string;
 
   constructor(options: ApplicationEnginesOptions = {}) {
     this.now = options.now ?? (() => new Date().toISOString());
     this.context = options.context ?? getProductionContextEngine();
+    this.digestToolExecutor = new ToolExecutor(new ToolRegistry(createBuiltInReadTools()));
     this._memory = options.memory ?? getProductionMemoryEngine();
     this._conversation = options.conversation ?? getProductionConversationEngine();
-    this._digest = options.digest ?? getProductionDigestEngine();
-    this._jobs = options.jobs ?? getProductionJobEngine();
-    this._actions = options.actions ?? getProductionActionEngine();
-    this._workflows = options.workflows ?? getProductionWorkflowEngine();
+
+    // Composition roots are rebuilt bottom-up on every mutation. When not
+    // injected they are seeded fresh over the app engines — never from the
+    // module singletons, whose managers carry process-wide state and would
+    // leak into (and be polluted by) this application root.
+    this._digest =
+      options.digest ?? new DigestEngine({ sources: this.appDigestSources(), now: this.now });
+    this._jobs =
+      options.jobs ??
+      new JobEngine({
+        memoryEngine: this._memory,
+        conversationEngine: this._conversation,
+        contextEngine: this.context,
+        seedDigestJob: false,
+        now: this.now,
+      });
+    this._actions =
+      options.actions ??
+      new ActionEngine({
+        memoryEngine: this._memory,
+        conversationEngine: this._conversation,
+        digestEngine: this._digest,
+        jobEngine: this._jobs,
+        contextEngine: this.context,
+        now: this.now,
+      });
+    this._workflows =
+      options.workflows ??
+      new WorkflowEngine({
+        actionEngine: this._actions,
+        jobEngine: this._jobs,
+        digestEngine: this._digest,
+        contextEngine: this.context,
+        now: this.now,
+      });
     this.rebuild();
   }
 
@@ -504,7 +542,6 @@ export class ApplicationEngines {
    * sources are wired to the app engine set.
    */
   private appDigestSources(): DigestDataSources {
-    const toolExecutor = new ToolExecutor(new ToolRegistry(createBuiltInReadTools()));
     return {
       listMemories: () => this._memory.listMemories(),
       listConversations: () => this._conversation.listConversations(),
@@ -515,7 +552,8 @@ export class ApplicationEngines {
           userQuery: query,
         }),
       listJobs: () => this._jobs.manager.list(),
-      executeTools: (plan) => toolExecutor.execute(plan, { timeoutMs: DIGEST_TOOL_TIMEOUT_MS }),
+      executeTools: (plan) =>
+        this.digestToolExecutor.execute(plan, { timeoutMs: DIGEST_TOOL_TIMEOUT_MS }),
     };
   }
 

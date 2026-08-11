@@ -35,7 +35,7 @@ import { JobHandlerRegistry } from "@/lib/jobs/executor";
 import { JobManager } from "@/lib/jobs/manager";
 import { JobRepository } from "@/lib/jobs/repository";
 import { createJob, type CreateJobInput, type Job } from "@/lib/jobs/types";
-import { createPipelineDigestHandler, type PipelineDigestResult } from "./pipeline";
+import { createPipelineDigestHandler } from "./pipeline";
 import type { RunSummary } from "@/lib/jobs/runner";
 
 /** Id of the recurring background pipeline job registered by the engine. */

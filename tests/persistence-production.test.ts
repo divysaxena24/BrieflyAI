@@ -8,7 +8,12 @@ import {
   getProductionPersistence,
 } from "@/lib/persistence/production";
 import { MemoryPersistenceStore } from "@/lib/persistence/store";
-import { PersistenceNotFoundError, PersistenceVersionError, type CollectionKind } from "@/lib/persistence/types";
+import {
+  PersistenceNotFoundError,
+  PersistenceVersionError,
+  type CollectionKind,
+  type PersistenceStore,
+} from "@/lib/persistence/types";
 import { createCollectionCodec } from "@/lib/persistence/serialization";
 import { createProductionMemoryEngine } from "@/lib/memory/production";
 import { createProductionConversationEngine } from "@/lib/conversation/production";
@@ -236,7 +241,7 @@ describe("production factory and singleton", () => {
 });
 
 /** A store whose every method fails — for failure-isolation tests. */
-class FailingStore implements import("@/lib/persistence/types").PersistenceStore {
+class FailingStore implements PersistenceStore {
   async read(): Promise<never> {
     throw new Error("boom");
   }
