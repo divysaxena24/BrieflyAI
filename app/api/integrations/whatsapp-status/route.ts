@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { registry } from "@/lib/services/integrations/registry";
 import { withHandler } from "@/lib/api/handler";
-import { getUserIntegrationByPlatform, findUserByAuthId, updateIntegrationStatus } from "@/lib/db/queries";
+import { getUserIntegrationByPlatform, findUserByAuthId } from "@/lib/db/queries";
 import { whatsappSessionManager } from "@/lib/services/whatsapp/whatsappSessionManager";
 import { db, integrations } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -44,13 +44,9 @@ export const GET = withHandler(async () => {
   const provider = registry.getProvider("whatsapp");
   const res = await provider.status(appUser.id, "whatsapp");
 
-  // Persist the connected state so the integrations list (which reads the DB
-  // row directly) reflects the scan. Guarded so the poll doesn't churn the DB.
+  // The session manager persists the connected status from Baileys' open event.
+  // Keep the phase metadata update here without issuing a second status write.
   if (res.status === "connected" && integration.status !== "connected") {
-    await updateIntegrationStatus(integration.id, "connected");
-
-    // Phase metadata: "pending-scan" → "connected" once the QR scan succeeds.
-    // Best-effort; preserves any other metadata fields (e.g. the provider tag).
     try {
       const meta = integration.metadata ? JSON.parse(integration.metadata) : {};
       const nextMeta =

@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useIntegrationStatus } from "@/lib/integrations/store";
+import { useConfirmAction } from "@/components/ConfirmationDialog";
 import { PlatformIcon } from "./PlatformIcon";
 import {
   Loader2Icon,
@@ -59,6 +60,7 @@ const QR_SIZE = 220;
 const WhatsAppConnectDialogInner: React.FC<WhatsAppConnectDialogInnerProps> = ({ platformId }) => {
   const { getIntegration, closeConnectDialog, refetch, connectWithPairing, regeneratePairingSession } =
     useIntegrationStatus();
+  const confirmAction = useConfirmAction();
   const integration = getIntegration(platformId);
 
   const [phase, setPhase] = useState<DialogPhase>("starting");
@@ -199,22 +201,27 @@ const WhatsAppConnectDialogInner: React.FC<WhatsAppConnectDialogInnerProps> = ({
 
   /** Restart from a fresh session after auto-reconnect gave up. */
   const regenerate = useCallback(async () => {
-    setPhase("starting");
+    // Session reset clears the current WhatsApp session server-side (the
+    // disconnect route) before issuing a new QR — destructive, so it requires
+    // explicit confirmation. On failure the confirmation dialog stays open
+    // with the error; on cancel nothing happens.
+    const confirmed = await confirmAction({
+      title: "Are you sure?",
+      message:
+        "This will clear the current WhatsApp session and issue a new QR code. You'll need to scan the new code to reconnect.",
+      confirmLabel: "Reset Session",
+      busyLabel: "Resetting…",
+      onConfirm: () => regeneratePairingSession(platformId),
+    });
+    if (!confirmed || !mountedRef.current) return;
+
     setError(null);
     setQr(null);
     setQrImage(null);
-    try {
-      await regeneratePairingSession(platformId);
-      if (!mountedRef.current) return;
-      setPhase("waiting-qr");
-      startPolling();
-      startTimeout();
-    } catch (err) {
-      if (!mountedRef.current) return;
-      setPhase("error");
-      setError(err instanceof Error ? err.message : "Could not generate a new QR code.");
-    }
-  }, [platformId, regeneratePairingSession, startPolling, startTimeout]);
+    setPhase("waiting-qr");
+    startPolling();
+    startTimeout();
+  }, [platformId, confirmAction, regeneratePairingSession, startPolling, startTimeout]);
 
   /** Retry the whole flow (timeout / network failure). */
   const retry = useCallback(() => {

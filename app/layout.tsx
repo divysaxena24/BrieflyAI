@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
+import { ConfirmationProvider } from "@/components/ConfirmationDialog";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -51,6 +52,8 @@ export default async function RootLayout({
     >
       <head />
       <body className="min-h-full flex flex-col">
+        {/* Global confirmation dialog for all destructive actions */}
+        <ConfirmationProvider>
         {/* Top banner when authenticated (only shown outside dashboard) */}
         {currentUser && (
           <div className="border-b border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950/30">
@@ -68,6 +71,7 @@ export default async function RootLayout({
           </div>
         )}
         {children}
+        </ConfirmationProvider>
       </body>
     </html>
   );

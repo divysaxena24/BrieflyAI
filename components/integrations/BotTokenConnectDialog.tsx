@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useIntegrationStatus } from "@/lib/integrations/store";
 import { PlatformIcon } from "./PlatformIcon";
+import { TelegramTokenGuide } from "./TelegramTokenGuide";
 import {
   Loader2Icon,
   LockIcon,
@@ -156,6 +157,9 @@ const BotTokenConnectDialogInner: React.FC<BotTokenConnectDialogInnerProps> = ({
                 </p>
               )}
             </div>
+
+            {/* In-app guide — only for Telegram (the first bot-token platform) */}
+            {platformId === "telegram" && <TelegramTokenGuide />}
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-1">

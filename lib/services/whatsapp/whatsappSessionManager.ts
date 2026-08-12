@@ -12,6 +12,7 @@ import makeWASocket, {
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { extractMessageText, normalizeNumber } from "./whatsappUtils";
+import { updateIntegrationStatus } from "@/lib/db/queries/integrations";
 
 /**
  * Structured log meta with the platform tag, mirroring the other service layers.
@@ -52,6 +53,8 @@ interface SessionEntry {
   reconnectAttempts: number;
   /** True once disconnect()/removeSession() runs — blocks auto-reconnect. */
   disposed: boolean;
+  connectedStatusWriteStarted: boolean;
+  notConnectedStatusWriteStarted: boolean;
 
   // ── Read store (populated from Baileys events on the live socket) ──
   /** jid → chat, from messaging-history.set / chats.upsert / chats.update */
@@ -146,6 +149,8 @@ export class WhatsAppSessionManager {
       reconnectTimer: null,
       reconnectAttempts: 0,
       disposed: false,
+      connectedStatusWriteStarted: false,
+      notConnectedStatusWriteStarted: false,
       chats: new Map(),
       messages: new Map(),
       contacts: new Map(),
@@ -196,20 +201,30 @@ export class WhatsAppSessionManager {
    * disconnects the integration.
    */
   async removeSession(integrationId: string): Promise<void> {
-    const entry = this.getRequiredEntry(integrationId);
-    const { socket, authFolder } = entry;
-    this.teardown(entry);
+    // Best-effort teardown of a live session (if one exists). Idempotent: a
+    // missing in-memory session (e.g. after a server restart) must NOT throw —
+    // the integration row still needs to be marked not-connected and any
+    // persisted creds deleted, otherwise disconnect() would silently leave the
+    // DB row stuck on "connected".
+    const entry = this.sessions.get(integrationId);
+    if (entry && !entry.disposed) {
+      const { socket } = entry;
+      this.teardown(entry);
 
-    if (socket) {
-      try {
-        await socket.logout();
-      } catch (err) {
-        logger.warn("WhatsAppSessionManager: logout failed (session may already be invalid)", logMeta({ integrationId, error: String(err) }));
+      if (socket) {
+        try {
+          await socket.logout();
+        } catch (err) {
+          logger.warn("WhatsAppSessionManager: logout failed (session may already be invalid)", logMeta({ integrationId, error: String(err) }));
+        }
       }
     }
 
+    // Always mark the canonical integration row not-connected.
+    await updateIntegrationStatus(integrationId, "not-connected", "idle");
+
     try {
-      await fs.rm(authFolder, { recursive: true, force: true });
+      await fs.rm(path.join(this.sessionsDir, integrationId), { recursive: true, force: true });
       logger.info("WhatsAppSessionManager: session removed", logMeta({ integrationId }));
     } catch (err) {
       logger.warn("WhatsAppSessionManager: failed to delete session folder", logMeta({ integrationId, error: String(err) }));
@@ -346,7 +361,9 @@ export class WhatsAppSessionManager {
     });
 
     socket.ev.on("connection.update", (update) => {
-      this.handleConnectionUpdate(integrationId, entry, update);
+      // handleConnectionUpdate is async; run without awaiting to keep the
+      // event handler non-blocking.
+      void this.handleConnectionUpdate(integrationId, entry, update);
     });
 
     // ── Read store ────────────────────────────────────────
@@ -423,7 +440,7 @@ export class WhatsAppSessionManager {
     logger.info("WhatsAppSessionManager: socket created", logMeta({ integrationId }));
   }
 
-  private handleConnectionUpdate(integrationId: string, entry: SessionEntry, update: Partial<ConnectionState>): void {
+  private async handleConnectionUpdate(integrationId: string, entry: SessionEntry, update: Partial<ConnectionState>): Promise<void> {
     if (entry.disposed) return;
 
     const { connection, qr, lastDisconnect } = update;
@@ -436,12 +453,28 @@ export class WhatsAppSessionManager {
     }
 
     if (connection === "open") {
+      // If the DB row already reads "connected", assume this is a reconnect
+      // and avoid updating lastSyncAt / syncStatus repeatedly.
+      const wasOpen = entry.state === "open";
       entry.state = "open";
       entry.qr = null;
       entry.connectedAt = new Date().toISOString();
       entry.lastDisconnectReason = null;
       entry.reconnectAttempts = 0;
       logger.info("WhatsAppSessionManager: connection open", logMeta({ integrationId }));
+
+      if (!entry.connectedStatusWriteStarted) {
+        entry.connectedStatusWriteStarted = true;
+        try {
+          await updateIntegrationStatus(integrationId, "connected", "connected");
+          logger.info("WhatsAppSessionManager: integration marked connected in DB", logMeta({ integrationId }));
+        } catch (err) {
+          entry.connectedStatusWriteStarted = false;
+          logger.warn("WhatsAppSessionManager: failed to update integration status to connected", logMeta({ integrationId, error: String(err) }));
+        }
+      } else if (!wasOpen) {
+        logger.debug("WhatsAppSessionManager: integration status already persisted; skipping DB update", logMeta({ integrationId }));
+      }
       return;
     }
 
@@ -459,6 +492,16 @@ export class WhatsAppSessionManager {
         entry.state = "logged-out";
         entry.lastDisconnectReason = "logged-out";
         logger.warn("WhatsAppSessionManager: session logged out", logMeta({ integrationId }));
+        if (!entry.notConnectedStatusWriteStarted) {
+          entry.notConnectedStatusWriteStarted = true;
+          try {
+            await updateIntegrationStatus(integrationId, "not-connected", "idle");
+            logger.info("WhatsAppSessionManager: integration marked not-connected in DB (logged-out)", logMeta({ integrationId }));
+          } catch (err) {
+            entry.notConnectedStatusWriteStarted = false;
+            logger.warn("WhatsAppSessionManager: failed to mark integration not-connected (logged-out)", logMeta({ integrationId, error: String(err) }));
+          }
+        }
         return;
       }
 
@@ -483,6 +526,16 @@ export class WhatsAppSessionManager {
         "WhatsAppSessionManager: giving up after repeated reconnect failures",
         logMeta({ integrationId, attempts: entry.reconnectAttempts }),
       );
+      // Mark the integration as not-connected in the DB when reconnect gives up.
+      if (!entry.notConnectedStatusWriteStarted) {
+        entry.notConnectedStatusWriteStarted = true;
+        void updateIntegrationStatus(integrationId, "not-connected", "idle")
+          .then(() => logger.info("WhatsAppSessionManager: integration marked not-connected in DB (reconnect-failed)", logMeta({ integrationId })))
+          .catch((err) => {
+            entry.notConnectedStatusWriteStarted = false;
+            logger.warn("WhatsAppSessionManager: failed to mark integration not-connected (reconnect-failed)", logMeta({ integrationId, error: String(err) }));
+          });
+      }
       return;
     }
     const delay = Math.min(
