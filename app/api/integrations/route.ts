@@ -4,7 +4,7 @@ import { findUserByAuthId, getUserIntegrations } from "@/lib/db/queries";
 import { db, oauthTokens as oauthTokensTable } from "@/lib/db";
 import { inArray } from "drizzle-orm";
 import { integrationPlatforms } from "@/lib/integrations/config";
-import type { ConnectionStatus } from "@/lib/integrations/types";
+import { mapDbStatusToConnectionStatus } from "@/lib/integrations/status-map";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -51,7 +51,7 @@ export const GET = withHandler(async (_req: Request) => {
             const token = tokenMap.get(dbInt.id);
             return {
               ...p,
-              status: dbInt.status as ConnectionStatus,
+              status: mapDbStatusToConnectionStatus(dbInt.status),
               permissions: dbInt.permissions ?? p.permissions,
               lastSync: dbInt.lastSyncAt ? dbInt.lastSyncAt.toISOString() : p.lastSync,
               account: dbInt.accountEmail ?? dbInt.accountName ?? p.account,

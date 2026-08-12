@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import crypto from "crypto";
 import { logger } from "@/lib/logger";
 import { db, oauthTokens } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -160,7 +161,12 @@ async function doRefresh(integrationId: string) {
 
         await db.update(oauthTokens).set(updateData).where(eq(oauthTokens.integrationId, integrationId)).returning();
 
-        logger.info("DiscordTokenManager: refresh successful", { integrationId, expiresAt: expiresAt ? expiresAt.toISOString() : null });
+        // Log a short one-way fingerprint of the refreshed access token (never
+        // log the token value itself) so we can correlate requests without
+        // exposing secrets in logs.
+        const fingerprint = (t: string) => crypto.createHash("sha256").update(t).digest("hex").slice(0, 8);
+        const tokenHash = access_token ? fingerprint(access_token) : null;
+        logger.info("DiscordTokenManager: refresh successful", { integrationId, expiresAt: expiresAt ? expiresAt.toISOString() : null, tokenHash });
         return { access_token, expiresAt };
       } catch (err) {
         logger.error("DiscordTokenManager: failed to persist refreshed token", { integrationId, error: String(err) });

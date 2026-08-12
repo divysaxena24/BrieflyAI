@@ -90,6 +90,27 @@ describe("DiscordClient 401 recovery", () => {
     expect(res.data).toEqual([{ id: "g1", name: "Acme" }]);
   });
 
+  it("uses the refreshed access token when retrying after a 401", async () => {
+    const fetchMock = safeFetch as unknown as ReturnType<typeof vi.fn>;
+    fetchMock
+      .mockResolvedValueOnce(httpResponse(401, { message: "401: Unauthorized" }))
+      .mockResolvedValueOnce(httpResponse(200, [{ id: "g1", name: "Acme" }]));
+
+    // Spy on buildHeaders to capture which token was used for each request.
+    const buildSpy = vi.spyOn(DiscordClient.prototype, "buildHeaders");
+
+    const client = new DiscordClient("int-1");
+    const res = await client.get<Array<{ id: string; name: string }>>("/users/@me/guilds");
+
+    expect(discordTokenManager.refreshToken).toHaveBeenCalledWith("int-1");
+    expect(buildSpy).toHaveBeenCalled();
+    // First buildHeaders call used the stale token, second should use the fresh one.
+    expect((buildSpy.mock.calls[0] as any)[0]).toBe("stale-token");
+    expect((buildSpy.mock.calls[1] as any)[0]).toBe("fresh-token");
+    buildSpy.mockRestore();
+    expect(res.data).toEqual([{ id: "g1", name: "Acme" }]);
+  });
+
   it("rethrows the clean reconnect error when the refresh itself fails", async () => {
     (discordTokenManager.refreshToken as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
       new AppError("Discord needs to be reconnected — your Discord session expired", 401, "reconnect_required"),

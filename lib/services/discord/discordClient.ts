@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import crypto from "crypto";
 import { logger } from "@/lib/logger";
 import { safeFetch } from "@/lib/services/google-http";
 import discordTokenManager from "@/lib/services/integrations/discordTokenManager";
@@ -91,6 +92,10 @@ export class DiscordClient {
   async authenticatedFetch<T = unknown>(path: string, opts: DiscordRequestOptions = {}): Promise<DiscordResponse<T>> {
     const accessToken = await this.resolveAccessToken();
 
+    // Fingerprint helper — one-way hash so the token itself is never logged.
+    const fingerprint = (t: string) => crypto.createHash("sha256").update(t).digest("hex").slice(0, 8);
+    const tokenHash = accessToken ? fingerprint(accessToken) : null;
+
     // Accept both absolute and relative paths.
     const url = path.startsWith("http") ? new URL(path) : new URL(`${BASE}${path}`);
     if (opts.query) {
@@ -104,12 +109,12 @@ export class DiscordClient {
       init.body = typeof opts.body === "string" ? opts.body : JSON.stringify(opts.body);
     }
 
-    logger.debug("Discord: calling Discord API", logMeta({ url: url.pathname, method: init.method }));
+    logger.debug("Discord: calling Discord API", logMeta({ url: url.pathname, method: init.method, tokenHash }));
 
     let res = await safeFetch(
       url.toString(),
       init,
-      logMeta({ url: url.pathname }),
+      logMeta({ url: url.pathname, tokenHash }),
       opts.timeoutMs ?? 10000,
       opts.maxRetries ?? 1
     );
@@ -122,12 +127,14 @@ export class DiscordClient {
       try {
         const refreshed = await discordTokenManager.refreshToken(this.integrationId);
         if (refreshed?.access_token) {
+          const refreshedHash = fingerprint(refreshed.access_token);
+          logger.info("DiscordClient: token refreshed, retrying request", logMeta({ integrationId: this.integrationId, refreshedHash }));
           const retryHeaders = { ...this.buildHeaders(refreshed.access_token), ...(opts.headers ?? {}) };
           const retryInit: RequestInit = { ...init, headers: retryHeaders };
           res = await safeFetch(
             url.toString(),
             retryInit,
-            logMeta({ url: url.pathname, retry: true }),
+            logMeta({ url: url.pathname, retry: true, refreshedHash }),
             opts.timeoutMs ?? 10000,
             opts.maxRetries ?? 1
           );

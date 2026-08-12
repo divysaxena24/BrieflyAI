@@ -34,7 +34,10 @@ function computeOverviewStats(platforms: IntegrationConfig[]) {
   const notConnected = platforms.filter((p) => p.status === "not-connected").length;
   const healthy = platforms.filter((p) => p.status === "connected").length;
   const warning = platforms.filter(
-    (p) => p.status === "syncing" || p.status === "token-expired"
+    (p) =>
+      p.status === "syncing" ||
+      p.status === "token-expired" ||
+      p.status === "needs-reconnect"
   ).length;
   const disconnected = notConnected;
   const errorCount = platforms.filter(

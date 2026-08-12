@@ -5,7 +5,8 @@ export type ConnectionStatus =
   | "disconnecting"
   | "syncing"
   | "error"
-  | "token-expired";
+  | "token-expired"
+  | "needs-reconnect";
 
 export type AuthType = "google-oauth" | "oauth" | "bot-token";
 

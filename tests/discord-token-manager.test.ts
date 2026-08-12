@@ -34,6 +34,11 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() },
 }));
 
+// Provide dummy Discord client credentials for tests so the refresh flow
+// proceeds to call the token endpoint (tests mock fetch responses).
+process.env.DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "test-client-id";
+process.env.DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "test-client-secret";
+
 import { db } from "@/lib/db";
 import { updateIntegrationStatus } from "@/lib/db/queries";
 import discordTokenManager from "@/lib/services/integrations/discordTokenManager";

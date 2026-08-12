@@ -2,16 +2,20 @@
 
 import React from "react";
 import type { ConnectionStatus } from "@/lib/integrations/types";
-import { CheckCircleIcon, Loader2Icon, AlertTriangleIcon, LockIcon, WifiOffIcon } from "@/components/dashboard/icons";
+import { CheckCircleIcon, Loader2Icon, AlertTriangleIcon, LockIcon, RefreshCwIcon, WifiOffIcon } from "@/components/dashboard/icons";
 
 interface ConnectionBadgeProps {
   status: ConnectionStatus;
 }
 
-const statusConfig: Record<
-  ConnectionStatus,
-  { label: string; bg: string; text: string; icon: React.FC<{ size?: number; className?: string }> }
-> = {
+export interface ConnectionBadgeConfig {
+  label: string;
+  bg: string;
+  text: string;
+  icon: React.FC<{ size?: number; className?: string }>;
+}
+
+const statusConfig: Record<ConnectionStatus, ConnectionBadgeConfig> = {
   "not-connected": {
     label: "Not Connected",
     bg: "bg-zinc-100 dark:bg-zinc-800",
@@ -54,10 +58,37 @@ const statusConfig: Record<
     text: "text-orange-700 dark:text-orange-300",
     icon: LockIcon,
   },
+  "needs-reconnect": {
+    label: "Needs Reconnect",
+    bg: "bg-orange-100/80 dark:bg-orange-950/60",
+    text: "text-orange-700 dark:text-orange-300",
+    icon: RefreshCwIcon,
+  },
 };
 
+/**
+ * Fallback styling for status values that arrive at runtime but are not part
+ * of the `ConnectionStatus` contract (e.g. a stale cached response or a status
+ * written by a newer backend). Neutral styling — never implies health.
+ */
+const UNKNOWN_STATUS_CONFIG: ConnectionBadgeConfig = {
+  label: "Unknown",
+  bg: "bg-zinc-100 dark:bg-zinc-800",
+  text: "text-zinc-500 dark:text-zinc-400",
+  icon: WifiOffIcon,
+};
+
+/**
+ * Resolve the badge config for a status. Returns a config for every known
+ * `ConnectionStatus` and the neutral fallback for anything else, so callers can
+ * safely read `config.icon` without guarding against `undefined`.
+ */
+export function getConnectionBadgeConfig(status: ConnectionStatus): ConnectionBadgeConfig {
+  return statusConfig[status] ?? UNKNOWN_STATUS_CONFIG;
+}
+
 export const ConnectionBadge: React.FC<ConnectionBadgeProps> = ({ status }) => {
-  const config = statusConfig[status];
+  const config = getConnectionBadgeConfig(status);
   const Icon = config.icon;
 
   const isSpinning = status === "connecting" || status === "syncing" || status === "disconnecting";
