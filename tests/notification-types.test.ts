@@ -530,7 +530,7 @@ describe("configuration, limits, health, providers", () => {
   });
 
   it("channel types and priority ranks are canonical", () => {
-    expect(NOTIFICATION_CHANNEL_TYPES).toHaveLength(8);
+    expect(NOTIFICATION_CHANNEL_TYPES).toHaveLength(7);
     expect(NOTIFICATION_PRIORITY_RANK.critical).toBeGreaterThan(NOTIFICATION_PRIORITY_RANK.low);
   });
 });

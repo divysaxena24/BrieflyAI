@@ -8,7 +8,6 @@ import {
   GithubIcon,
   DiscordIcon,
   TelegramSendIcon,
-  MessageIcon,
 } from "@/components/dashboard/icons";
 
 const platformIconMap: Record<string, React.FC<{ size?: number; className?: string }>> = {
@@ -18,7 +17,6 @@ const platformIconMap: Record<string, React.FC<{ size?: number; className?: stri
   github: GithubIcon,
   discord: DiscordIcon,
   telegram: TelegramSendIcon,
-  whatsapp: MessageIcon,
 };
 
 interface PlatformIconProps {

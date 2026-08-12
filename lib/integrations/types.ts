@@ -7,7 +7,7 @@ export type ConnectionStatus =
   | "error"
   | "token-expired";
 
-export type AuthType = "google-oauth" | "oauth" | "bot-token" | "pairing-code";
+export type AuthType = "google-oauth" | "oauth" | "bot-token";
 
 export interface SyncInfo {
   lastSync: string | null;

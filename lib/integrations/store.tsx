@@ -65,25 +65,6 @@ interface IntegrationStoreValue {
   connectWithToken: (platformId: string, token: string) => Promise<void>;
 
   /**
-   * Start a pairing-code session (e.g. WhatsApp QR). POSTs the connect route
-   * and returns the session payload ({ integrationId, sessionId, state }).
-   * Throws with the server's error message on failure. Polling (QR + status)
-   * is owned by the WhatsAppConnectDialog.
-   */
-  connectWithPairing: (
-    platformId: string,
-  ) => Promise<{ integrationId?: string; sessionId?: string; state?: string }>;
-
-  /**
-   * Restart a pairing-code session after auto-reconnect gave up: disconnects
-   * (clears the stuck session server-side) then starts a fresh session so a
-   * new QR code is issued. Throws with the server's error message on failure.
-   */
-  regeneratePairingSession: (
-    platformId: string,
-  ) => Promise<{ integrationId?: string; sessionId?: string; state?: string }>;
-
-  /**
    * Optimistically update a single integration's fields.
    * Prefer connectPlatform / disconnectPlatform for standard operations.
    */
@@ -142,16 +123,6 @@ const BOT_TOKEN_ROUTES: Record<string, { connect: string; disconnect: string }> 
   telegram: { connect: "telegram-connect", disconnect: "telegram-disconnect" },
 };
 
-/**
- * API route segment per pairing-code platform (the single source of truth for
- * which platforms use a QR-code pairing flow). WhatsApp is the first
- * pairing-code platform; future providers only add an entry here and reuse the
- * shared QR connect dialog (components/integrations/WhatsAppConnectDialog).
- */
-const PAIRING_CODE_ROUTES: Record<string, { connect: string; disconnect: string }> = {
-  whatsapp: { connect: "whatsapp-connect", disconnect: "whatsapp-disconnect" },
-};
-
 // ──────────────────────────────────────────────
 //  Helpers
 // ──────────────────────────────────────────────
@@ -181,14 +152,6 @@ function isBotTokenPlatform(platformId: string): boolean {
 }
 
 /**
- * Determine whether a platform uses a QR-code pairing flow instead of OAuth
- * or a bot token. These platforms open the shared QR connect dialog.
- */
-function isPairingCodePlatform(platformId: string): boolean {
-  return Object.hasOwn(PAIRING_CODE_ROUTES, platformId);
-}
-
-/**
  * Build the OAuth redirect URL for a platform.
  */
 function buildConnectUrl(platformId: string, currentPath: string): string {
@@ -204,7 +167,6 @@ function buildDisconnectUrl(platformId: string): string {
   const route =
     OAUTH_ROUTES[platformId]?.disconnect ??
     BOT_TOKEN_ROUTES[platformId]?.disconnect ??
-    PAIRING_CODE_ROUTES[platformId]?.disconnect ??
     "google-disconnect";
   return `/api/integrations/${route}?platform=${platformId}`;
 }
@@ -341,10 +303,9 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
         return;
       }
 
-      if (isBotTokenPlatform(platformId) || isPairingCodePlatform(platformId)) {
-        // Bot-token (e.g. Telegram) and pairing-code (e.g. WhatsApp) platforms:
-        // no OAuth redirect — open the shared connect dialog. The dialog then
-        // drives the flow (paste token, or start a session and show the QR).
+      if (isBotTokenPlatform(platformId)) {
+        // Bot-token (e.g. Telegram) platforms: no OAuth redirect — open the
+        // shared connect dialog. The dialog then drives the flow (paste token).
         openConnectDialog(platformId);
         return;
       }
@@ -405,99 +366,11 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
     [fetchIntegrations, updateIntegration, closeConnectDialog, getIntegration],
   );
 
-  /**
-   * Start a pairing-code session (WhatsApp QR). POSTs the connect route — the
-   * server creates the integration row and starts the Baileys session without
-   * waiting for the scan. The dialog polls the QR + status endpoints after.
-   */
-  const connectWithPairing = useCallback(
-    async (
-      platformId: string,
-    ): Promise<{ integrationId?: string; sessionId?: string; state?: string }> => {
-      const route = PAIRING_CODE_ROUTES[platformId]?.connect;
-      if (!route) throw new Error(`No connect route configured for ${platformId}`);
-
-      // Optimistic: surface "connecting" while the session is started
-      const previousStatus = getIntegration(platformId)?.status ?? "not-connected";
-      updateIntegration(platformId, { status: "connecting" as ConnectionStatus });
-
-      try {
-        const res = await fetch(`/api/integrations/${route}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "same-origin",
-        });
-        const body = await res.json().catch(() => null);
-
-        if (!res.ok) {
-          // Restore the prior status and surface the server message
-          updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
-          const message =
-            body?.message ?? body?.errors?.[0]?.message ?? `Failed to start session (${res.status})`;
-          throw new Error(message);
-        }
-
-        return (body?.data ?? {}) as { integrationId?: string; sessionId?: string; state?: string };
-      } catch (err) {
-        // Restore the prior status (not-connected / token-expired / …)
-        updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
-        throw err;
-      }
-    },
-    [updateIntegration, getIntegration],
-  );
-
-  /**
-   * Restart a pairing-code session after auto-reconnect gave up: clear the
-   * stuck session server-side (disconnect route) then start a fresh session so
-   * the session manager issues a brand-new QR code.
-   */
-  const regeneratePairingSession = useCallback(
-    async (
-      platformId: string,
-    ): Promise<{ integrationId?: string; sessionId?: string; state?: string }> => {
-      const routes = PAIRING_CODE_ROUTES[platformId];
-      if (!routes) throw new Error(`No pairing routes configured for ${platformId}`);
-
-      const previousStatus = getIntegration(platformId)?.status ?? "not-connected";
-      updateIntegration(platformId, { status: "connecting" as ConnectionStatus });
-
-      try {
-        // Clear the stuck session so a fresh QR is issued
-        await fetch(`/api/integrations/${routes.disconnect}?platform=${platformId}`, {
-          method: "GET",
-          credentials: "same-origin",
-        });
-
-        // Start a brand-new session
-        const res = await fetch(`/api/integrations/${routes.connect}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "same-origin",
-        });
-        const body = await res.json().catch(() => null);
-
-        if (!res.ok) {
-          updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
-          const message =
-            body?.message ?? body?.errors?.[0]?.message ?? `Failed to restart session (${res.status})`;
-          throw new Error(message);
-        }
-
-        return (body?.data ?? {}) as { integrationId?: string; sessionId?: string; state?: string };
-      } catch (err) {
-        updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
-        throw err;
-      }
-    },
-    [updateIntegration, getIntegration],
-  );
-
   // ─── Shared disconnect action ───────────────
 
   const disconnectPlatform = useCallback(
     async (platformId: string) => {
-      if (isOAuthPlatform(platformId) || isBotTokenPlatform(platformId) || isPairingCodePlatform(platformId)) {
+      if (isOAuthPlatform(platformId) || isBotTokenPlatform(platformId)) {
         const prev = snapshot();
 
         // Optimistic: show "disconnecting" then "not-connected"
@@ -545,8 +418,6 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
     closeConnectDialog,
     connectDialogPlatform,
     connectWithToken,
-    connectWithPairing,
-    regeneratePairingSession,
     updateIntegration,
     replacePlatforms,
     refetch: fetchIntegrations,

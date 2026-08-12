@@ -2,7 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { signOut } from "@/app/actions";
 import { DashboardLayout } from "@/components/dashboard";
 import { IntegrationStoreProvider } from "@/lib/integrations/store";
-import { BotTokenConnectDialog, WhatsAppConnectDialog, OAuthConnectDialog } from "@/components/integrations";
+import { BotTokenConnectDialog, OAuthConnectDialog } from "@/components/integrations";
 
 export default async function DashboardRootLayout({
   children,
@@ -19,7 +19,6 @@ export default async function DashboardRootLayout({
     >
       <IntegrationStoreProvider>
         <BotTokenConnectDialog />
-        <WhatsAppConnectDialog />
         <OAuthConnectDialog />
         {children}
       </IntegrationStoreProvider>

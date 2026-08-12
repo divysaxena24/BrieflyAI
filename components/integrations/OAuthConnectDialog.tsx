@@ -25,8 +25,8 @@ export const OAuthConnectDialog: React.FC = () => {
   if (!connectDialogPlatform) return null;
   // Only render for platforms that use the OAuth confirmation flow.
   // The store's connectPlatform() opens this dialog for platforms registered
-  // in OAUTH_CONFIRM_ROUTES (e.g. Discord). Bot-token and pairing-code
-  // platforms are handled by their own dialogs.
+  // in OAUTH_CONFIRM_ROUTES (e.g. Discord). Bot-token platforms are handled
+  // by their own dialog.
   const integration = getIntegration(connectDialogPlatform);
   if (!integration || integration.authenticationType !== "oauth") return null;
   return <OAuthConnectDialogInner key={connectDialogPlatform} platformId={connectDialogPlatform} />;

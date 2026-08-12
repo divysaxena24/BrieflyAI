@@ -45,7 +45,6 @@ export const SOURCE_PRIORITY: Readonly<Record<string, number>> = Object.freeze({
   calendar: 0.8,
   discord: 0.7,
   telegram: 0.7,
-  whatsapp: 0.7,
   drive: 0.6,
 });
 
@@ -59,7 +58,6 @@ export const INTENT_KEYWORDS: Readonly<Record<string, string[]>> = Object.freeze
   github: ["repo", "github", "commit", "pull request", "issue"],
   discord: ["discord", "channel"],
   telegram: ["telegram", "chat"],
-  whatsapp: ["whatsapp", "message"],
   memory: ["memory", "remember"],
 });
 

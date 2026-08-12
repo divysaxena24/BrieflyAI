@@ -6,7 +6,6 @@ import {
   createEmailChannel,
   createDiscordChannel,
   createTelegramChannel,
-  createWhatsAppChannel,
   createWebhookChannel,
   createPushChannel,
   createInAppChannel,
@@ -37,7 +36,6 @@ describe("built-in channel construction", () => {
     expect(createEmailChannel().channel).toBe("email");
     expect(createDiscordChannel().channel).toBe("discord");
     expect(createTelegramChannel().channel).toBe("telegram");
-    expect(createWhatsAppChannel().channel).toBe("whatsapp");
     expect(createWebhookChannel().channel).toBe("webhook");
     expect(createPushChannel().channel).toBe("push");
     expect(createInAppChannel().channel).toBe("inapp");
@@ -48,7 +46,6 @@ describe("built-in channel construction", () => {
     expect(createEmailChannel().capabilities.supportsHtml).toBe(true);
     expect(createEmailChannel().capabilities.supportsBatch).toBe(true);
     expect(createTelegramChannel().capabilities.supportsBatch).toBe(false);
-    expect(createWhatsAppChannel().capabilities.supportsHtml).toBe(false);
     expect(createPushChannel().capabilities.supportsAttachments).toBe(false);
     expect(createWebhookChannel().capabilities.supportsAttachments).toBe(false);
   });
@@ -80,11 +77,6 @@ describe("validation", () => {
   it("validates telegram chat ids", () => {
     expect(createTelegramChannel().validate(input({ recipient: createNotificationRecipient({ channel: "telegram", address: "12345" }) })).ok).toBe(true);
     expect(createTelegramChannel().validate(input({ recipient: createNotificationRecipient({ channel: "telegram", address: "abc" }) })).ok).toBe(false);
-  });
-
-  it("validates whatsapp phones", () => {
-    expect(createWhatsAppChannel().validate(input({ recipient: createNotificationRecipient({ channel: "whatsapp", address: "+15551234567" }) })).ok).toBe(true);
-    expect(createWhatsAppChannel().validate(input({ recipient: createNotificationRecipient({ channel: "whatsapp", address: "not-a-phone" }) })).ok).toBe(false);
   });
 
   it("validates webhook urls", () => {
@@ -233,7 +225,7 @@ describe("NotificationChannelRegistry", () => {
 
   it("seeds from an initial list", () => {
     const registry = createNotificationChannelRegistry({ channels: createDefaultNotificationChannels() });
-    expect(registry.count()).toBe(8);
+    expect(registry.count()).toBe(7);
   });
 
   it("looks up channels by type", () => {

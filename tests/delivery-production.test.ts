@@ -57,7 +57,7 @@ describe("production channel wiring", () => {
     const summary = await publisher.deliver(
       [
         createChannelRecipient({ channel: "email", address: "a@x.com" }),
-        createChannelRecipient({ channel: "whatsapp", address: "+1" }),
+        createChannelRecipient({ channel: "telegram", address: "@x" }),
       ],
       "digest",
     );

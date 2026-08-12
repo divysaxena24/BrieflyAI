@@ -53,7 +53,7 @@ describe("createChannelRecipient / helpers", () => {
   });
 
   it("clones detach and hash is stable", () => {
-    const recipient = createChannelRecipient({ channel: "whatsapp", address: "+1", label: "Me" });
+    const recipient = createChannelRecipient({ channel: "telegram", address: "@me", label: "Me" });
     const clone = cloneChannelRecipient(recipient);
     expect(clone).toEqual(recipient);
     expect(Object.isFrozen(clone)).toBe(false);
@@ -61,7 +61,7 @@ describe("createChannelRecipient / helpers", () => {
   });
 
   it("lists every delivery channel", () => {
-    expect(DELIVERY_CHANNELS).toEqual(["email", "discord", "telegram", "whatsapp"]);
+    expect(DELIVERY_CHANNELS).toEqual(["email", "discord", "telegram"]);
   });
 });
 

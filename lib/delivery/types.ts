@@ -3,12 +3,12 @@
  *
  * The delivery abstraction over the digest layer's `DigestPublisher`: a
  * digest is formatted once and dispatched per recipient through a
- * `ChannelSender` — the transport seam for Email/Discord/Telegram/WhatsApp.
+ * `ChannelSender` — the transport seam for Email/Discord/Telegram.
  *
  * STOP CONDITION (documented, per architecture rules): no production sender
  * exists in the repository for any of these channels — Telegram/Discord
- * services are 501 placeholders, WhatsApp/Gmail are read-only, and the
- * notifications service is a 501 placeholder. This layer therefore defines
+ * services are 501 placeholders, Gmail is read-only, and the notifications
+ * service is a 501 placeholder. This layer therefore defines
  * the real *adapters* (registry + publisher with failure isolation and
  * config-only retry) and requires senders to be injected; the production
  * wiring ships with an empty registry so a publish to any channel yields a
@@ -17,15 +17,14 @@
 
 import { hashString } from "@/lib/hash";
 
-/** The four delivery channels the application may deliver to. */
-export type DeliveryChannel = "email" | "discord" | "telegram" | "whatsapp";
+/** The delivery channels the application may deliver to. */
+export type DeliveryChannel = "email" | "discord" | "telegram";
 
 /** Every delivery channel, in a stable canonical order. */
 export const DELIVERY_CHANNELS: readonly DeliveryChannel[] = Object.freeze([
   "email",
   "discord",
   "telegram",
-  "whatsapp",
 ]);
 
 /** A single delivery destination on a channel. */
@@ -89,9 +88,9 @@ export interface ChannelSendOutput {
 
 /**
  * The transport seam for one channel. Applications implement `send` with a
- * real provider (Gmail API, Telegram Bot API, Discord webhook, WhatsApp
- * Baileys) — none exists in the repository today (documented stop
- * condition), so senders are dependency-injected.
+ * real provider (Gmail API, Telegram Bot API, Discord webhook) — none
+ * exists in the repository today (documented stop condition), so senders
+ * are dependency-injected.
  */
 export interface ChannelSender {
   readonly channel: DeliveryChannel;

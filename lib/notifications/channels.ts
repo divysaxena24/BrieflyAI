@@ -3,8 +3,8 @@
  *
  * The transport seam of the notification layer: a generic
  * `NotificationChannel` contract (types module) plus built-in channel
- * implementations for Email, Discord, Telegram, WhatsApp, Webhook, Push,
- * InApp and Mock.
+ * implementations for Email, Discord, Telegram, Webhook, Push, InApp and
+ * Mock.
  *
  * Guarantees:
  * - **No SDK logic**: every channel is a pure structural adapter. Real
@@ -190,9 +190,6 @@ const URL_PATTERN = /^https?:\/\/[^\s]+$/i;
 /** Telegram chat id: digits, possibly negative. */
 const TELEGRAM_PATTERN = /^-?[0-9]+$/;
 
-/** WhatsApp phone: digits with optional leading +. */
-const WHATSAPP_PATTERN = /^\+?[0-9]{7,15}$/;
-
 /** The per-channel validation rules (deterministic). */
 const CHANNEL_RULES: Readonly<Record<NotificationChannelType, ChannelRules>> = Object.freeze({
   email: {
@@ -216,13 +213,6 @@ const CHANNEL_RULES: Readonly<Record<NotificationChannelType, ChannelRules>> = O
     isValidAddress: (address) => TELEGRAM_PATTERN.test(address),
     supportsAttachments: true,
     supportsMarkdown: true,
-    supportsBatch: false,
-  },
-  whatsapp: {
-    channel: "whatsapp",
-    isValidAddress: (address) => WHATSAPP_PATTERN.test(address),
-    supportsAttachments: true,
-    supportsMarkdown: false,
     supportsBatch: false,
   },
   webhook: {
@@ -399,11 +389,6 @@ export function createTelegramChannel(options: NotificationChannelOptions = {}):
   return createNotificationChannel("telegram", options);
 }
 
-/** Build a WhatsApp channel (E.164-like phone). */
-export function createWhatsAppChannel(options: NotificationChannelOptions = {}): NotificationChannel {
-  return createNotificationChannel("whatsapp", options);
-}
-
 /** Build a Webhook channel (http(s) url). */
 export function createWebhookChannel(options: NotificationChannelOptions = {}): NotificationChannel {
   return createNotificationChannel("webhook", options);
@@ -505,13 +490,12 @@ export function createNotificationChannelRegistry(
   return new NotificationChannelRegistry(options);
 }
 
-/** The default production channels: all eight built-ins. */
+/** The default production channels: all built-ins. */
 export function createDefaultNotificationChannels(): readonly NotificationChannel[] {
   return Object.freeze([
     createEmailChannel(),
     createDiscordChannel(),
     createTelegramChannel(),
-    createWhatsAppChannel(),
     createWebhookChannel(),
     createPushChannel(),
     createInAppChannel(),

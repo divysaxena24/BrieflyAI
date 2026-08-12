@@ -26,9 +26,3 @@ services:
       - "3000:3000"
 
     restart: unless-stopped
-
-    volumes:
-      - whatsapp_sessions:/app/.whatsapp-sessions
-
-volumes:
-  whatsapp_sessions:

@@ -100,7 +100,7 @@ export default function PlatformSettingsPage() {
                     ? "OAuth"
                     : integration.authenticationType === "bot-token"
                       ? "Bot Token"
-                      : "Pairing Code"}
+                      : "OAuth"}
               </span>
             </div>
           </section>

@@ -578,7 +578,7 @@ export class NotificationPreferenceEngine {
     const allowList =
       preference.channels.length > 0
         ? preference.channels
-        : (["email", "discord", "telegram", "whatsapp", "webhook", "push", "inapp", "mock"] as const);
+        : (["email", "discord", "telegram", "webhook", "push", "inapp", "mock"] as const);
     return allowList.filter((channel) => this.isChannelEnabled(preference, channel));
   }
 

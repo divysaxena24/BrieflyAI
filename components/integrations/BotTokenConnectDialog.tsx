@@ -23,8 +23,7 @@ import {
  */
 export const BotTokenConnectDialog: React.FC = () => {
   const { connectDialogPlatform, getIntegration } = useIntegrationStatus();
-  // Render only for bot-token platforms — pairing-code platforms (e.g.
-  // WhatsApp) are handled by the WhatsAppConnectDialog.
+  // Render only for bot-token platforms.
   if (!connectDialogPlatform) return null;
   if (getIntegration(connectDialogPlatform)?.authenticationType !== "bot-token") return null;
   return <BotTokenConnectDialogInner key={connectDialogPlatform} platformId={connectDialogPlatform} />;

@@ -1,6 +1,6 @@
 import React from "react";
 import { PageHeader } from "@/components/dashboard";
-import { BriefingsIcon, AiSparklesIcon, GmailMailIcon, TelegramSendIcon, MessageIcon } from "@/components/dashboard/icons";
+import { BriefingsIcon, AiSparklesIcon, GmailMailIcon, TelegramSendIcon } from "@/components/dashboard/icons";
 
 export default function BriefingsPage() {
   const briefingsList = [
@@ -21,15 +21,6 @@ export default function BriefingsPage() {
       summary: "Main topic: UI Dashboard refactoring completed. Next deployment scheduled for Wednesday. 2 pull requests ready for review.",
       badge: "Digest",
       badgeColor: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
-    },
-    {
-      title: "WhatsApp Client Activity Digest",
-      time: "Yesterday, 2:15 PM",
-      icon: MessageIcon,
-      source: "Client Support Channel",
-      summary: "Customer requested updated onboarding documentation. Account manager confirmed appointment for Friday at 11 AM.",
-      badge: "Action Required",
-      badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
     },
   ];
 

@@ -139,7 +139,6 @@ function deadLetterByChannel(entries: readonly NotificationFailure[]): Readonly<
     email: 0,
     discord: 0,
     telegram: 0,
-    whatsapp: 0,
     webhook: 0,
     push: 0,
     inapp: 0,

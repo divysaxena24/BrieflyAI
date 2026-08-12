@@ -16,7 +16,6 @@ export function getProviderDisplayName(id: ProviderId) {
     github: "GitHub",
     discord: "Discord",
     telegram: "Telegram",
-    whatsapp: "WhatsApp",
   };
   return map[id] ?? id;
 }

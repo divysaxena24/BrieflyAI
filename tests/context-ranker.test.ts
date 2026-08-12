@@ -190,7 +190,6 @@ describe("ContextRanker source priority", () => {
       calendar: 0.385,
       discord: 0.365,
       telegram: 0.365,
-      whatsapp: 0.365,
       drive: 0.345,
     };
     for (const [source, expected] of Object.entries(cases)) {
@@ -230,11 +229,6 @@ describe("ContextRanker intent matching", () => {
   it("boosts telegram on chat keywords", () => {
     const result = ranker.rank([makeContext({ source: "telegram", metadata: { kind: "message", entityId: "1" } })], makeQuery({ query: "my telegram chat" }));
     expect(result[0]!.score).toBeCloseTo(0.2 * INTENT_MATCH_SCORE + 0.125 + 0.2 * SOURCE_PRIORITY.telegram, 5);
-  });
-
-  it("boosts whatsapp on message keywords", () => {
-    const result = ranker.rank([makeContext({ source: "whatsapp", metadata: { kind: "message", entityId: "1" } })], makeQuery({ query: "read that whatsapp message" }));
-    expect(result[0]!.score).toBeCloseTo(0.2 * INTENT_MATCH_SCORE + 0.125 + 0.2 * SOURCE_PRIORITY.whatsapp, 5);
   });
 
   it("boosts memory on memory keywords", () => {

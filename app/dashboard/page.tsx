@@ -33,13 +33,12 @@ export default async function DashboardPage() {
   const stats = [
     { label: "Messages Summarized", value: "128", icon: MessageIcon, change: "+24% this week", color: "text-brand-500 bg-brand-50 dark:bg-brand-950/50" },
     { label: "Active Reminders", value: "6", icon: ClockReminderIcon, change: "2 due today", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/50" },
-    { label: "Connected Platforms", value: "3 / 4", icon: PlatformLinkIcon, change: "Gmail, WhatsApp, Telegram", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/50" },
+    { label: "Connected Platforms", value: "2 / 3", icon: PlatformLinkIcon, change: "Gmail, Telegram", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/50" },
     { label: "AI Credits Used", value: "450 / 1000", icon: UpgradeZapIcon, change: "Pro Plan active", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/50" },
   ];
 
   const platforms = [
     { name: "Gmail", icon: GmailMailIcon, desc: "Read, summarize, and organize your inbox", connected: true, gradient: "from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20", border: "border-red-200 dark:border-red-900/50" },
-    { name: "WhatsApp", icon: MessageIcon, desc: "Never miss important chat updates", connected: true, gradient: "from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20", border: "border-emerald-200 dark:border-emerald-900/50" },
     { name: "Telegram", icon: TelegramSendIcon, desc: "Summarize group messages & key action items", connected: true, gradient: "from-sky-50 to-sky-100/50 dark:from-sky-950/30 dark:to-sky-900/20", border: "border-sky-200 dark:border-sky-900/50" },
     { name: "Outlook", icon: OutlookCalendarIcon, desc: "Sync calendar events and emails seamlessly", connected: false, gradient: "from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20", border: "border-blue-200 dark:border-blue-900/50" },
   ];
@@ -204,7 +203,7 @@ export default async function DashboardPage() {
           <div className="space-y-4">
             {[
               { time: "Just now", event: "Inbox Daily Brief generated", detail: "Summarized 14 new emails from Gmail", dot: "bg-brand-500" },
-              { time: "10 min ago", event: "WhatsApp reminder set", detail: "Meeting with Design Team tomorrow at 10 AM", dot: "bg-emerald-500" },
+              { time: "10 min ago", event: "Drive sync completed", detail: "3 new documents indexed from Google Drive", dot: "bg-emerald-500" },
               { time: "1 hour ago", event: "Telegram digest ready", detail: "3 key decisions extracted from Dev Channel", dot: "bg-sky-500" },
             ].map((item, i) => (
               <div key={i} className="flex gap-3.5 items-start">

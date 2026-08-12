@@ -69,7 +69,7 @@ export default function AiAgentPage() {
           <div className="mt-4 space-y-2">
             {[
               "Flag any email containing 'Invoice' or 'Urgent'",
-              "Summarize WhatsApp group messages longer than 5 chats",
+              "Summarize Telegram group messages longer than 5 chats",
               "Never auto-respond to newsletters",
             ].map((rule, idx) => (
               <div key={idx} className="rounded-xl bg-zinc-50 p-2.5 text-xs text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300">

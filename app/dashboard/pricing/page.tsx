@@ -11,7 +11,7 @@ export default function PricingPage() {
       desc: "For individuals looking to automate basic email & chat digests.",
       features: [
         "100 AI Summary Credits / mo",
-        "Connect up to 2 Channels (Gmail & WhatsApp)",
+        "Connect up to 2 Channels (Gmail & Telegram)",
         "Standard Processing Speed",
         "Daily Briefing Email",
       ],
@@ -26,7 +26,7 @@ export default function PricingPage() {
       desc: "For professionals requiring real-time alerts, unlimited summaries, and custom agent rules.",
       features: [
         "Unlimited AI Summary Credits",
-        "Connect all 4 Channels (Gmail, WhatsApp, Telegram, Outlook)",
+        "Connect all 3 Channels (Gmail, Telegram, Outlook)",
         "Priority High-Speed AI Processing",
         "Custom Persona & System Instructions",
         "Smart Automated Reminders",

@@ -26,7 +26,6 @@ export type NotificationChannelType =
   | "email"
   | "discord"
   | "telegram"
-  | "whatsapp"
   | "webhook"
   | "push"
   | "inapp"
@@ -37,7 +36,6 @@ export const NOTIFICATION_CHANNEL_TYPES: readonly NotificationChannelType[] = Ob
   "email",
   "discord",
   "telegram",
-  "whatsapp",
   "webhook",
   "push",
   "inapp",

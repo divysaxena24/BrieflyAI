@@ -11,10 +11,6 @@ export const mcpToolsByPlatform: Record<string, McpTool[]> = {
     { id: "gmail-draft", name: "Draft Email", description: "Compose email drafts with AI assistance" },
     { id: "gmail-send", name: "Send Email", description: "Send emails directly from BrieflyAI" },
   ],
-  whatsapp: [
-    { id: "wa-read", name: "Read Chats", description: "Read and monitor WhatsApp conversations" },
-    { id: "wa-send", name: "Send Messages", description: "Send WhatsApp messages via AI agent" },
-  ],
   "google-calendar": [
     { id: "gcal-read", name: "Read Events", description: "Read calendar events and schedules" },
     { id: "gcal-create", name: "Create Event", description: "Create calendar events with AI" },
@@ -113,17 +109,5 @@ export const integrationPlatforms: IntegrationConfig[] = [
     lastSync: null,
     account: null,
     accentColor: "#26a5e4",
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp",
-    description: "Capture important messages and extract action items from your WhatsApp conversations.",
-    category: "Messaging",
-    authenticationType: "pairing-code",
-    status: "not-connected",
-    permissions: "read",
-    lastSync: null,
-    account: null,
-    accentColor: "#25d366",
   },
 ];

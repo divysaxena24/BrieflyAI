@@ -14,7 +14,7 @@ export default function AlertsPage() {
     {
       title: "Design Review Sync",
       due: "Tomorrow at 10:00 AM",
-      source: "WhatsApp (Team Group)",
+      source: "Telegram (Team Group)",
       status: "Scheduled",
       priority: "Medium",
     },

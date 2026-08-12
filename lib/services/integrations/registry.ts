@@ -35,7 +35,7 @@ export function getProvider(id: string): Provider {
  * This is safe to call during bootstrap.
  */
 export function registerDefaultPlaceholders() {
-  ["gmail", "google-calendar", "google-drive", "github", "discord", "telegram", "whatsapp"].forEach((id) => {
+  ["gmail", "google-calendar", "google-drive", "github", "discord", "telegram"].forEach((id) => {
     if (!providers.has(id)) {
       registerProvider(id, new DefaultProvider(id, getProviderDisplayName(id)));
     }
@@ -101,28 +101,6 @@ export function bootstrapProviders() {
     logger.debug("bootstrapProviders: TelegramProvider not registered", { error: err });
   }
 
-  // Register WhatsAppProvider unconditionally — WhatsApp uses per-user Baileys
-  // sessions (QR pairing), so like Telegram there are no server-side
-  // CLIENT_ID / CLIENT_SECRET / REDIRECT_URI credentials to gate on.
-  try {
-    const WhatsAppProvider =
-      require("./whatsappProvider").WhatsAppProvider;
-    // Register under 'whatsapp' (overwrites the placeholder registered above)
-    registerProvider(
-      "whatsapp",
-      new WhatsAppProvider()
-    );
-
-    logger.info(
-      "bootstrapProviders: WhatsAppProvider registered"
-    );
-
-  } catch (error) {
-    logger.debug(
-      "bootstrapProviders: WhatsAppProvider unavailable",
-      { error }
-    );
-  }
 }
 
 export function listRegisteredProviders() {

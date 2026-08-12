@@ -83,7 +83,7 @@ export default async function Home() {
               </h1>
 
               <p className="mt-6 max-w-lg text-base leading-relaxed text-zinc-600 sm:text-lg dark:text-zinc-400 mx-auto lg:mx-0">
-                Connect your Gmail, WhatsApp, Telegram, and Outlook —
+                Connect your Gmail, Telegram, and Outlook —
                 BrieflyAI unifies your conversations, generates smart summaries,
                 sets intelligent reminders, and keeps you organized so you can
                 focus on what matters.
@@ -156,7 +156,6 @@ export default async function Home() {
                   <div className="space-y-3">
                     {[
                       { platform: "Gmail", color: "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400", sender: "Sarah Chen", preview: "Meeting tomorrow at 2pm?" },
-                      { platform: "WhatsApp", color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400", sender: "Team Group", preview: "Project deadline updated to Friday" },
                       { platform: "Telegram", color: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400", sender: "Dev Channel", preview: "New PR ready for review" },
                       { platform: "Outlook", color: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400", sender: "HR Department", preview: "Quarterly review schedule" },
                     ].map((msg, i) => (
@@ -203,7 +202,6 @@ export default async function Home() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { name: "Gmail", icon: "✉️", desc: "Read, summarize, and organize your inbox with AI.", connected: true, gradient: "from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/20", border: "border-red-200 dark:border-red-900/50" },
-              { name: "WhatsApp", icon: "💬", desc: "Never miss important messages. Get daily digests.", connected: false, gradient: "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20", border: "border-emerald-200 dark:border-emerald-900/50" },
               { name: "Telegram", icon: "✈️", desc: "Summarize group chats and track action items.", connected: false, gradient: "from-sky-50 to-sky-100 dark:from-sky-950/30 dark:to-sky-900/20", border: "border-sky-200 dark:border-sky-900/50" },
               { name: "Outlook", icon: "📅", desc: "Sync calendar events and emails seamlessly.", connected: false, gradient: "from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20", border: "border-blue-200 dark:border-blue-900/50" },
             ].map((platform, i) => (
@@ -239,7 +237,7 @@ export default async function Home() {
             {[
               { icon: "📝", title: "Smart Summaries", desc: "Get concise AI-generated summaries of long email threads, group chats, and conversations across all your platforms." },
               { icon: "⏰", title: "Intelligent Reminders", desc: "Never miss a deadline. AI detects action items and deadlines, then sets smart reminders automatically." },
-              { icon: "🔍", title: "Cross-Platform Search", desc: "Search across Gmail, WhatsApp, Telegram, and Outlook simultaneously. Find anything instantly." },
+              { icon: "🔍", title: "Cross-Platform Search", desc: "Search across Gmail, Telegram, and Outlook simultaneously. Find anything instantly." },
               { icon: "📊", title: "Priority Inbox", desc: "AI prioritizes your messages by urgency and importance. Focus on what truly matters each day." },
               { icon: "💡", title: "Smart Replies", desc: "Get context-aware reply suggestions drafted by AI. Respond faster across all your platforms." },
               { icon: "📋", title: "Daily Digest", desc: "Receive a beautifully summarized daily briefing of everything important — emails, messages, events." },
@@ -264,7 +262,7 @@ export default async function Home() {
           </div>
           <div className="mt-14 grid gap-8 md:grid-cols-3">
             {[
-              { step: "01", title: "Connect Your Accounts", desc: "Securely link your Gmail, WhatsApp, Telegram, and Outlook with one click. Your data stays encrypted.", color: "from-brand-500 to-brand-600" },
+              { step: "01", title: "Connect Your Accounts", desc: "Securely link your Gmail, Telegram, and Outlook with one click. Your data stays encrypted.", color: "from-brand-500 to-brand-600" },
               { step: "02", title: "AI Learns Your Patterns", desc: "Our AI analyzes your conversations to understand priorities, deadlines, and what matters to you.", color: "from-accent-500 to-accent-600" },
               { step: "03", title: "Stay Organized Effortlessly", desc: "Get daily summaries, smart reminders, and cross-platform search — all in one beautiful dashboard.", color: "from-amber-500 to-orange-500" },
             ].map((step, i) => (
@@ -316,7 +314,7 @@ export default async function Home() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-bold text-white">B</div>
                 <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">BrieflyAI</span>
               </Link>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Your intelligent personal agent that unifies Gmail, WhatsApp, Telegram, and Outlook into one powerful productivity hub.</p>
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Your intelligent personal agent that unifies Gmail, Telegram, and Outlook into one powerful productivity hub.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Product</h4>

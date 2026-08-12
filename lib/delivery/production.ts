@@ -4,9 +4,9 @@
  * Wires the channel publisher over an injected (or empty) sender registry.
  *
  * STOP CONDITION (documented, per architecture rules): no real sender
- * exists in the repository for Email/Discord/Telegram/WhatsApp (the
- * Telegram/Discord services are 501 placeholders, WhatsApp/Gmail are
- * read-only, and the notifications service is a 501 placeholder). The
+ * exists in the repository for Email/Discord/Telegram (the Telegram/Discord
+ * services are 501 placeholders, Gmail is read-only, and the notifications
+ * service is a 501 placeholder). The
  * application must inject real `ChannelSender`s through the factory; the
  * production singleton ships with an empty registry, so a publish to any
  * channel yields a structured `channel_sender_missing` outcome — never a
