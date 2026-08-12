@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "@/app/actions";
+import { useConfirmAction, isRedirectError } from "@/components/ConfirmationDialog";
 
 export type UserMenuProps = {
   name: string | null;
@@ -29,6 +30,7 @@ function getInitials(name: string | null, email: string | null): string {
 export default function UserMenu({ name, email, avatar }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const confirmAction = useConfirmAction();
 
   const displayName = name ?? email ?? "User";
   const initials = getInitials(name, email);
@@ -113,10 +115,28 @@ export default function UserMenu({ name, email, avatar }: UserMenuProps) {
               </Link>
             </div>
 
-            {/* Sign out */}
-            <form action={signOut} className="pt-1">
+            {/* Sign out — destructive, so it requires explicit confirmation */}
+            <div className="pt-1">
               <button
-                type="submit"
+                type="button"
+                onClick={() =>
+                  void confirmAction({
+                    title: "Are you sure?",
+                    message:
+                      "Logging out will end your current BrieflyAI session. You'll need to sign in again to access your dashboard.",
+                    confirmLabel: "Logout",
+                    busyLabel: "Logging out…",
+                    onConfirm: async () => {
+                      try {
+                        await signOut();
+                      } catch (err) {
+                        // Server actions that call redirect() throw internally;
+                        // navigation still happens. Surface only real failures.
+                        if (!isRedirectError(err)) throw err;
+                      }
+                    },
+                  })
+                }
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-300 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               >
                 <svg
@@ -134,7 +154,7 @@ export default function UserMenu({ name, email, avatar }: UserMenuProps) {
                 </svg>
                 Sign Out
               </button>
-            </form>
+            </div>
           </div>
         </>
       )}

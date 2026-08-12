@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/dashboard";
 import { PlatformIcon, ConnectionBadge, PermissionBadge } from "@/components/integrations";
 import { integrationPlatforms, mcpToolsByPlatform } from "@/lib/integrations/config";
 import { useIntegrationStatus } from "@/lib/integrations/store";
+import { useConfirmAction } from "@/components/ConfirmationDialog";
 import {
   ArrowRightIcon,
   SettingsIcon,
@@ -23,6 +24,7 @@ export default function PlatformSettingsPage() {
   const platformId = params.platform;
 
   const { platforms, connectPlatform, disconnectPlatform } = useIntegrationStatus();
+  const confirmAction = useConfirmAction();
 
   // Use the live status from the store, falling back to static config
   const integration = platforms.find((p) => p.id === platformId) ?? integrationPlatforms.find((p) => p.id === platformId);
@@ -53,6 +55,21 @@ export default function PlatformSettingsPage() {
       </div>
     );
   }
+
+  /**
+   * Shared disconnect handler for both destructive buttons on this page.
+   * The API request is only dispatched after the user explicitly confirms
+   * in the global confirmation dialog.
+   */
+  const handleDisconnect = () => {
+    void confirmAction({
+      title: "Are you sure?",
+      message: `Disconnecting will stop BrieflyAI from accessing your ${integration.name} until you reconnect.`,
+      confirmLabel: "Disconnect",
+      busyLabel: "Disconnecting…",
+      onConfirm: () => disconnectPlatform(platformId),
+    });
+  };
 
   return (
     <div>
@@ -139,7 +156,7 @@ export default function PlatformSettingsPage() {
                 {isConnected && (
                   <button
                     type="button"
-                    onClick={() => disconnectPlatform(platformId)}
+                    onClick={handleDisconnect}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition-all hover:bg-red-50 active:scale-95 dark:border-red-900 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
                   >
                     Disconnect
@@ -298,7 +315,7 @@ export default function PlatformSettingsPage() {
             </p>
             <button
               type="button"
-              onClick={() => disconnectPlatform(platformId)}
+              onClick={handleDisconnect}
               className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition-all hover:bg-red-50 active:scale-95 dark:border-red-900 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
             >
               Disconnect {integration.name}

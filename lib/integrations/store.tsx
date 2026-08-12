@@ -93,8 +93,14 @@ const MOCK_CONNECT_DELAY = 300;
  */
 const OAUTH_ROUTES: Record<string, { connect: string; disconnect: string }> = {
   gmail: { connect: "google-connect", disconnect: "google-disconnect" },
-  "google-calendar": { connect: "google-connect", disconnect: "google-disconnect" },
-  "google-drive": { connect: "google-connect", disconnect: "google-disconnect" },
+  "google-calendar": {
+    connect: "google-connect",
+    disconnect: "google-disconnect",
+  },
+  "google-drive": {
+    connect: "google-connect",
+    disconnect: "google-disconnect",
+  },
   github: { connect: "github-connect", disconnect: "github-disconnect" },
   discord: { connect: "discord-connect", disconnect: "discord-disconnect" },
 };
@@ -109,7 +115,10 @@ const OAUTH_ROUTES: Record<string, { connect: string; disconnect: string }> = {
  * instead of redirecting immediately on connectPlatform(), they open the shared
  * OAuthConnectDialog first.
  */
-export const OAUTH_CONFIRM_ROUTES: Record<string, { connect: string; disconnect: string }> = {
+export const OAUTH_CONFIRM_ROUTES: Record<
+  string,
+  { connect: string; disconnect: string }
+> = {
   discord: { connect: "discord-connect", disconnect: "discord-disconnect" },
 };
 
@@ -119,7 +128,10 @@ export const OAUTH_CONFIRM_ROUTES: Record<string, { connect: string; disconnect:
  * first bot-token platform; future providers only add an entry here and reuse
  * the shared connect dialog (components/integrations/BotTokenConnectDialog).
  */
-const BOT_TOKEN_ROUTES: Record<string, { connect: string; disconnect: string }> = {
+const BOT_TOKEN_ROUTES: Record<
+  string,
+  { connect: string; disconnect: string }
+> = {
   telegram: { connect: "telegram-connect", disconnect: "telegram-disconnect" },
 };
 
@@ -175,7 +187,9 @@ function buildDisconnectUrl(platformId: string): string {
 //  Context
 // ──────────────────────────────────────────────
 
-const IntegrationStoreContext = createContext<IntegrationStoreValue | null>(null);
+const IntegrationStoreContext = createContext<IntegrationStoreValue | null>(
+  null,
+);
 
 // ──────────────────────────────────────────────
 //  Provider
@@ -185,16 +199,24 @@ interface IntegrationStoreProviderProps {
   children: ReactNode;
 }
 
-export function IntegrationStoreProvider({ children }: IntegrationStoreProviderProps) {
+export function IntegrationStoreProvider({
+  children,
+}: IntegrationStoreProviderProps) {
   // Lazy initializer captures the static config once at mount (avoids reading a ref during render)
-  const [platforms, setPlatforms] = useState<IntegrationConfig[]>(() => [...defaultPlatforms]);
+  const [platforms, setPlatforms] = useState<IntegrationConfig[]>(() => [
+    ...defaultPlatforms,
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
-  const connectTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const connectTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   // Bot-token connect dialog state — generic, reused by every bot-token platform
-  const [connectDialogPlatform, setConnectDialogPlatform] = useState<string | null>(null);
+  const [connectDialogPlatform, setConnectDialogPlatform] = useState<
+    string | null
+  >(null);
 
   // Clean up connect timeout on unmount
   useEffect(() => () => clearTimeout(connectTimerRef.current), []);
@@ -209,14 +231,19 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
       setError(null);
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) throw new Error("Non-JSON response");
+      if (!ct.includes("application/json"))
+        throw new Error("Non-JSON response");
       const body = await res.json();
       if (body?.data && Array.isArray(body.data)) {
         setPlatforms(body.data);
       }
     } catch (err) {
       if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : "Failed to fetch integration status");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch integration status",
+        );
       }
     } finally {
       if (mountedRef.current) {
@@ -276,7 +303,8 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
       // Check current status BEFORE taking action
       // This is the single point of truth for the connect guard.
       const current = getIntegration(platformId);
-      const alreadyConnected = current?.status === "connected" || current?.status === "syncing";
+      const alreadyConnected =
+        current?.status === "connected" || current?.status === "syncing";
 
       if (alreadyConnected) {
         // Already connected — do nothing. The UI should not show Connect,
@@ -299,7 +327,10 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
         // OAuth platforms (Google/GitHub/Discord-after-confirmation): redirect
         // the browser — the callback will redirect back and the store refetches
         // status. Only redirect when status is not-connected (confirmed above).
-        window.location.href = buildConnectUrl(platformId, window.location.pathname);
+        window.location.href = buildConnectUrl(
+          platformId,
+          window.location.pathname,
+        );
         return;
       }
 
@@ -311,10 +342,14 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
       }
 
       // Mock platforms: two-phase optimistic update
-      updateIntegration(platformId, { status: "connecting" as ConnectionStatus });
+      updateIntegration(platformId, {
+        status: "connecting" as ConnectionStatus,
+      });
       clearTimeout(connectTimerRef.current);
       connectTimerRef.current = setTimeout(() => {
-        updateIntegration(platformId, { status: "connected" as ConnectionStatus });
+        updateIntegration(platformId, {
+          status: "connected" as ConnectionStatus,
+        });
       }, MOCK_CONNECT_DELAY);
     },
     [getIntegration, updateIntegration, openConnectDialog],
@@ -328,12 +363,16 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
     async (platformId: string, token: string) => {
       const route = BOT_TOKEN_ROUTES[platformId]?.connect;
       const cleanToken = token.trim();
-      if (!route) throw new Error(`No connect route configured for ${platformId}`);
+      if (!route)
+        throw new Error(`No connect route configured for ${platformId}`);
       if (!cleanToken) throw new Error("Bot token is required");
 
       // Optimistic: surface "connecting" while the token is validated
-      const previousStatus = getIntegration(platformId)?.status ?? "not-connected";
-      updateIntegration(platformId, { status: "connecting" as ConnectionStatus });
+      const previousStatus =
+        getIntegration(platformId)?.status ?? "not-connected";
+      updateIntegration(platformId, {
+        status: "connecting" as ConnectionStatus,
+      });
 
       try {
         const res = await fetch(`/api/integrations/${route}`, {
@@ -346,20 +385,28 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
 
         if (!res.ok) {
           // Restore the prior status and surface the server message
-          updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
+          updateIntegration(platformId, {
+            status: previousStatus as ConnectionStatus,
+          });
           const message =
-            body?.message ?? body?.errors?.[0]?.message ?? `Failed to connect (${res.status})`;
+            body?.message ??
+            body?.errors?.[0]?.message ??
+            `Failed to connect (${res.status})`;
           throw new Error(message);
         }
 
         // Server accepted the token — mark connected optimistically first so a
         // failed refetch can never leave the badge stuck on "connecting".
-        updateIntegration(platformId, { status: "connected" as ConnectionStatus });
+        updateIntegration(platformId, {
+          status: "connected" as ConnectionStatus,
+        });
         await fetchIntegrations();
         closeConnectDialog();
       } catch (err) {
         // Restore the prior status (not-connected / token-expired / …)
-        updateIntegration(platformId, { status: previousStatus as ConnectionStatus });
+        updateIntegration(platformId, {
+          status: previousStatus as ConnectionStatus,
+        });
         throw err;
       }
     },
@@ -370,37 +417,49 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
 
   const disconnectPlatform = useCallback(
     async (platformId: string) => {
-      if (isOAuthPlatform(platformId) || isBotTokenPlatform(platformId)) {
-        const prev = snapshot();
-
-        // Optimistic: show "disconnecting" then "not-connected"
-        updateIntegration(platformId, { status: "disconnecting" as ConnectionStatus });
-        // Briefly show disconnecting before transitioning to not-connected
-        clearTimeout(connectTimerRef.current);
-        connectTimerRef.current = setTimeout(async () => {
-          updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
-
-          try {
-            const res = await fetch(buildDisconnectUrl(platformId), {
-              method: "GET",
-              credentials: "same-origin",
-            });
-            if (!res.ok) {
-              // Rollback on failure
-              replacePlatforms(prev);
-              console.error(`Failed to disconnect ${platformId}`);
-            }
-          } catch (err) {
-            // Rollback on error
-            replacePlatforms(prev);
-            console.error(err);
-          }
-        }, 200);
+      // Mock platforms: immediate optimistic update (no server request)
+      if (!isOAuthPlatform(platformId) && !isBotTokenPlatform(platformId)) {
+        updateIntegration(platformId, {
+          status: "not-connected" as ConnectionStatus,
+        });
         return;
       }
 
-      // Mock platforms: immediate optimistic update
-      updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
+      const prev = snapshot();
+
+      // Optimistic: briefly show "disconnecting" before transitioning to
+      // "not-connected", then call the disconnect route. The returned promise
+      // settles only after the API responds, so callers (e.g. the confirmation
+      // dialog) can await it and surface failures.
+      updateIntegration(platformId, {
+        status: "disconnecting" as ConnectionStatus,
+      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
+      updateIntegration(platformId, {
+        status: "not-connected" as ConnectionStatus,
+      });
+
+      try {
+        const res = await fetch(buildDisconnectUrl(platformId), {
+          method: "GET",
+          credentials: "same-origin",
+        });
+        if (!res.ok) {
+          // Rollback on failure
+          replacePlatforms(prev);
+          const body = await res.json().catch(() => null);
+          throw new Error(
+            body?.message ??
+              `Failed to disconnect ${platformId} (${res.status})`,
+          );
+        }
+      } catch (err) {
+        // Rollback on error, then rethrow so the caller can show the error
+        replacePlatforms(prev);
+        throw err instanceof Error
+          ? err
+          : new Error(`Failed to disconnect ${platformId}`);
+      }
     },
     [updateIntegration, snapshot, replacePlatforms],
   );

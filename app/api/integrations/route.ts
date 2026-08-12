@@ -4,6 +4,7 @@ import { findUserByAuthId, getUserIntegrations } from "@/lib/db/queries";
 import { db, oauthTokens as oauthTokensTable } from "@/lib/db";
 import { inArray } from "drizzle-orm";
 import { integrationPlatforms } from "@/lib/integrations/config";
+import type { ConnectionStatus } from "@/lib/integrations/types";
 import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +22,22 @@ export const GET = withHandler(async (_req: Request) => {
       const appUser = await findUserByAuthId(authUser.id);
       if (appUser) {
         const userIntegrations = await getUserIntegrations(appUser.id);
-        // Map DB integrations (platform "gmail" etc.) onto config platforms
-        const integrationMap = new Map(
-          userIntegrations.map((i) => [i.platform, i])
-        );
+        // Map DB integrations (platform "gmail" etc.) onto config platforms.
+        // Canonicalize first: keep at most ONE row per platform so legacy
+        // duplicate rows can never surface the wrong status. Prefer the
+        // connected row, otherwise the most recently updated row.
+        const integrationMap = new Map<string, (typeof userIntegrations)[number]>();
+        for (const integration of userIntegrations) {
+          const existing = integrationMap.get(integration.platform);
+          const keepExisting =
+            existing &&
+            ((existing.status === "connected" && integration.status !== "connected") ||
+              (existing.status === integration.status &&
+                (existing.updatedAt?.getTime() ?? 0) >= (integration.updatedAt?.getTime() ?? 0)));
+          if (!keepExisting) {
+            integrationMap.set(integration.platform, integration);
+          }
+        }
         // Fetch OAuth tokens to surface scopes for connected integrations
         const integrationIds = userIntegrations.map((i) => i.id);
         const tokenRows = integrationIds.length > 0
@@ -38,7 +51,7 @@ export const GET = withHandler(async (_req: Request) => {
             const token = tokenMap.get(dbInt.id);
             return {
               ...p,
-              status: dbInt.status as any,
+              status: dbInt.status as ConnectionStatus,
               permissions: dbInt.permissions ?? p.permissions,
               lastSync: dbInt.lastSyncAt ? dbInt.lastSyncAt.toISOString() : p.lastSync,
               account: dbInt.accountEmail ?? dbInt.accountName ?? p.account,

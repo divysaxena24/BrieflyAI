@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db, integrations, oauthTokens } from "@/lib/db";
 
 /**
@@ -34,6 +34,11 @@ export async function getUserIntegrationByPlatform(userId: string, platform: str
     .where(
       and(eq(integrations.userId, userId), eq(integrations.platform, platform))
     )
+    .orderBy(
+      sql<number>`CASE WHEN ${integrations.status} = 'connected' THEN 0 ELSE 1 END`,
+      desc(integrations.updatedAt),
+      desc(integrations.createdAt),
+    )
     .limit(1);
   return result[0] ?? null;
 }
@@ -65,6 +70,13 @@ export async function getConnectedAccount(userId: string, platform: string) {
     .leftJoin(oauthTokens, eq(oauthTokens.integrationId, integrations.id))
     .where(
       and(eq(integrations.userId, userId), eq(integrations.platform, platform))
+    )
+    // If legacy duplicate rows exist, never return an arbitrary one — prefer
+    // the connected row, then the most recently updated row.
+    .orderBy(
+      sql<number>`CASE WHEN ${integrations.status} = 'connected' THEN 0 ELSE 1 END`,
+      desc(integrations.updatedAt),
+      desc(integrations.createdAt),
     )
     .limit(1);
   return result[0] ?? null;
@@ -100,6 +112,16 @@ export async function createIntegration(input: CreateIntegrationInput) {
       accountEmail: input.accountEmail,
       accountName: input.accountName,
       metadata: input.metadata,
+    })
+    .onConflictDoUpdate({
+      target: [integrations.userId, integrations.platform],
+      set: {
+        permissions: input.permissions ?? "read",
+        accountEmail: input.accountEmail,
+        accountName: input.accountName,
+        metadata: input.metadata,
+        updatedAt: new Date(),
+      },
     })
     .returning();
   return result[0];
