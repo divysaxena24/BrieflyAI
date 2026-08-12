@@ -17,6 +17,7 @@ import {
 } from "./icons";
 import { SidebarItem } from "./SidebarItem";
 import { UpgradeCard } from "./UpgradeCard";
+import { useConfirmAction, isRedirectError } from "@/components/ConfirmationDialog";
 
 export interface NavItemConfig {
   id: string;
@@ -57,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const pathname = usePathname();
   const collapsed = isMobileDrawer ? false : isCollapsed;
+  const confirmAction = useConfirmAction();
 
   const initials = userFullName
     ? userFullName
@@ -178,7 +180,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!collapsed && onSignOut && (
             <button
               type="button"
-              onClick={onSignOut}
+              onClick={() =>
+                void confirmAction({
+                  title: "Are you sure?",
+                  message:
+                    "Logging out will end your current BrieflyAI session. You'll need to sign in again to access your dashboard.",
+                  confirmLabel: "Logout",
+                  busyLabel: "Logging out…",
+                  onConfirm: async () => {
+                    try {
+                      await onSignOut();
+                    } catch (err) {
+                      // Server actions that call redirect() throw internally;
+                      // navigation still happens. Surface only real failures.
+                      if (!isRedirectError(err)) throw err;
+                    }
+                  },
+                })
+              }
               title="Sign Out"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
             >

@@ -1,6 +1,7 @@
 export { IntegrationGrid } from "./IntegrationGrid";
 export { IntegrationCard } from "./IntegrationCard";
 export { BotTokenConnectDialog } from "./BotTokenConnectDialog";
+export { TelegramTokenGuide } from "./TelegramTokenGuide";
 export { WhatsAppConnectDialog } from "./WhatsAppConnectDialog";
 export { OAuthConnectDialog } from "./OAuthConnectDialog";
 export { ConnectionBadge } from "./ConnectionBadge";

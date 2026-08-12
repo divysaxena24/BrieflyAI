@@ -497,37 +497,44 @@ export function IntegrationStoreProvider({ children }: IntegrationStoreProviderP
 
   const disconnectPlatform = useCallback(
     async (platformId: string) => {
-      if (isOAuthPlatform(platformId) || isBotTokenPlatform(platformId) || isPairingCodePlatform(platformId)) {
-        const prev = snapshot();
-
-        // Optimistic: show "disconnecting" then "not-connected"
-        updateIntegration(platformId, { status: "disconnecting" as ConnectionStatus });
-        // Briefly show disconnecting before transitioning to not-connected
-        clearTimeout(connectTimerRef.current);
-        connectTimerRef.current = setTimeout(async () => {
-          updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
-
-          try {
-            const res = await fetch(buildDisconnectUrl(platformId), {
-              method: "GET",
-              credentials: "same-origin",
-            });
-            if (!res.ok) {
-              // Rollback on failure
-              replacePlatforms(prev);
-              console.error(`Failed to disconnect ${platformId}`);
-            }
-          } catch (err) {
-            // Rollback on error
-            replacePlatforms(prev);
-            console.error(err);
-          }
-        }, 200);
+      // Mock platforms: immediate optimistic update (no server request)
+      if (
+        !isOAuthPlatform(platformId) &&
+        !isBotTokenPlatform(platformId) &&
+        !isPairingCodePlatform(platformId)
+      ) {
+        updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
         return;
       }
 
-      // Mock platforms: immediate optimistic update
+      const prev = snapshot();
+
+      // Optimistic: briefly show "disconnecting" before transitioning to
+      // "not-connected", then call the disconnect route. The returned promise
+      // settles only after the API responds, so callers (e.g. the confirmation
+      // dialog) can await it and surface failures.
+      updateIntegration(platformId, { status: "disconnecting" as ConnectionStatus });
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
       updateIntegration(platformId, { status: "not-connected" as ConnectionStatus });
+
+      try {
+        const res = await fetch(buildDisconnectUrl(platformId), {
+          method: "GET",
+          credentials: "same-origin",
+        });
+        if (!res.ok) {
+          // Rollback on failure
+          replacePlatforms(prev);
+          const body = await res.json().catch(() => null);
+          throw new Error(
+            body?.message ?? `Failed to disconnect ${platformId} (${res.status})`,
+          );
+        }
+      } catch (err) {
+        // Rollback on error, then rethrow so the caller can show the error
+        replacePlatforms(prev);
+        throw err instanceof Error ? err : new Error(`Failed to disconnect ${platformId}`);
+      }
     },
     [updateIntegration, snapshot, replacePlatforms],
   );

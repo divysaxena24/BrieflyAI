@@ -20,6 +20,8 @@ import {
   Moon,
   Search,
   ChevronRight,
+  ChevronDown,
+  Info,
   MessageSquare,
   Clock,
   Link2,
@@ -118,6 +120,8 @@ export const LockIcon = Lock;
 export const PlugIcon = Plug;
 export const MailIcon = Mail;
 export const GlobeIcon = Globe;
+export const ChevronDownIcon = ChevronDown;
+export const InfoIcon = Info;
 
 // Overview dashboard utility icons
 export const LayersIcon = resolveIcon(["LayersIcon", "StackIcon"], Layers);

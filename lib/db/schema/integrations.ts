@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, index, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 /**
@@ -29,5 +29,6 @@ export const integrations = pgTable(
     index("idx_integrations_user_id").on(table.userId),
     index("idx_integrations_platform").on(table.platform),
     index("idx_integrations_user_platform").on(table.userId, table.platform),
+    uniqueIndex("uq_integrations_user_platform").on(table.userId, table.platform),
   ]
 );

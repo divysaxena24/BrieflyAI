@@ -1,6 +1,6 @@
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { getUserIntegrationByPlatform, createIntegration, updateIntegrationStatus, logActivity } from "@/lib/db/queries";
+import { getUserIntegrationByPlatform, createIntegration, logActivity } from "@/lib/db/queries";
 import type { WhatsAppSessionInfo } from "@/lib/services/whatsapp/whatsappSessionManager";
 import type { Provider, ConnectParams, ConnectResult, DisconnectParams, DisconnectResult, StatusResult, RefreshResult, ConnectionStatus } from "./types";
 
@@ -102,8 +102,6 @@ export class WhatsAppProvider implements Provider {
       } catch (err) {
         logger.warn("WhatsAppProvider.disconnect: session cleanup failed", { integrationId, error: String(err) });
       }
-
-      await updateIntegrationStatus(integrationId, "not-connected");
 
       // Log the disconnection activity asynchronously — never block the response
       logActivity({
