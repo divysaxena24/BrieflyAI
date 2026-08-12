@@ -20,6 +20,41 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment variables
+
+Copy the values into a local `.env.local` file (gitignored):
+
+```bash
+# Required for the AI tool layer (natural-language summaries).
+# Get a key at https://console.groq.com/keys
+GROQ_API_KEY=
+
+# Optional: override the Groq model (defaults to llama-3.3-70b-versatile).
+# GROQ_MODEL=
+```
+
+The `GROQ_API_KEY` is read only on the server (`lib/ai/groq.ts`) — it is never
+sent to the frontend, logged, or included in API responses or tool results.
+
+## AI Tools layer
+
+Natural-language requests against your connected integrations are handled by
+the AI orchestrator (`lib/ai/orchestrator.ts`):
+
+```text
+query → tool planner (Groq, deterministic fallback)
+     → tool executor (existing integration services)
+     → normalized tool result
+     → Groq natural-language response
+     → frontend
+```
+
+The 21 AI tools (`lib/ai/tools/`) wrap the existing Gmail, Calendar, Drive,
+GitHub, Discord, and Telegram services — no tokens ever reach the frontend,
+and every summary is generated from real integration data. Try them from the
+**AI Assistant** page (`/dashboard/ai-chat`), e.g. "Summarize my inbox",
+"What's on my calendar today?", or "What are the important open GitHub issues?".
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

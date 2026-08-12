@@ -1,8 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { getUserIntegrationByPlatform, findUserByAuthId, logActivity } from "@/lib/db/queries";
-import discordTokenManager from "@/lib/services/integrations/discordTokenManager";
+import { getUserIntegrationByPlatform, findUserByAuthId, logActivity, updateIntegrationStatus } from "@/lib/db/queries";
 import { DiscordClient } from "./discordClient";
 
 const PLATFORM = "discord"; // matches the platform stored by OAuth callback
@@ -429,16 +428,20 @@ export class DiscordService {
 
   /**
    * Centralize error handling: DiscordClient already throws AppError (mapped via
-   * mapDiscordError), so rethrow it (invalidating the token on 401 so the UI
-   * surfaces reconnection). Wrap any unexpected error into a generic AppError.
+   * mapDiscordError), so rethrow it. On 401 the integration is marked as
+   * needing reconnection so the UI surfaces it — the token row is deliberately
+   * NOT invalidated (invalidate() wipes the refresh token, which is what turned
+   * a recoverable expired token into a permanent "Refresh token missing" state).
+   * Wrap any unexpected error into a generic AppError.
    */
   private static async handleError(err: unknown, integrationId: string): Promise<never> {
     if (err instanceof AppError) {
       if (err.status === 401) {
         try {
-          await discordTokenManager.invalidate(integrationId);
+          await updateIntegrationStatus(integrationId, "needs_reconnect");
+          logger.info("DiscordService: integration marked needs_reconnect", logMeta({ integrationId }));
         } catch (e) {
-          logger.debug("DiscordService: failed to invalidate token", logMeta({ integrationId, error: String(e) }));
+          logger.debug("DiscordService: failed to mark needs_reconnect", logMeta({ integrationId, error: String(e) }));
         }
       }
       throw err;

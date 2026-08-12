@@ -75,6 +75,57 @@ describe('CalendarService', () => {
       expect(result.events[1].end).toBe('2025-01-17');
     });
 
+    it('preserves timed events with timezone offsets exactly (no conversion)', async () => {
+      // A real timed event with an explicit offset — e.g. a long train journey
+      // 03:20→21:25 IST. The service must pass the source timestamps through
+      // unchanged rather than re-interpreting them.
+      const events = [
+        {
+          id: 'evt-tz',
+          summary: 'Train to VIJAYAWADA JN (BZA)',
+          status: 'confirmed',
+          start: { dateTime: '2026-08-15T03:20:00+05:30' },
+          end: { dateTime: '2026-08-15T21:25:00+05:30' },
+        },
+      ];
+      vi.spyOn(CalendarClient.prototype, 'listEvents').mockResolvedValue({ items: events, nextPageToken: null });
+      const result = await CalendarService.listEvents();
+      expect(result.events[0].start).toBe('2026-08-15T03:20:00+05:30');
+      expect(result.events[0].end).toBe('2026-08-15T21:25:00+05:30');
+    });
+
+    it('preserves multi-day timed events across date boundaries', async () => {
+      const events = [
+        {
+          id: 'evt-multi',
+          summary: 'Conference',
+          status: 'confirmed',
+          start: { dateTime: '2026-08-20T09:00:00+05:30' },
+          end: { dateTime: '2026-08-22T18:00:00+05:30' },
+        },
+      ];
+      vi.spyOn(CalendarClient.prototype, 'listEvents').mockResolvedValue({ items: events, nextPageToken: null });
+      const result = await CalendarService.listEvents();
+      expect(result.events[0].start).toBe('2026-08-20T09:00:00+05:30');
+      expect(result.events[0].end).toBe('2026-08-22T18:00:00+05:30');
+    });
+
+    it('prefers dateTime over date when both are present (timed event wins)', async () => {
+      const events = [
+        {
+          id: 'evt-both',
+          summary: 'Mixed',
+          status: 'confirmed',
+          start: { date: '2026-08-15', dateTime: '2026-08-15T10:00:00Z' },
+          end: { date: '2026-08-15', dateTime: '2026-08-15T11:00:00Z' },
+        },
+      ];
+      vi.spyOn(CalendarClient.prototype, 'listEvents').mockResolvedValue({ items: events, nextPageToken: null });
+      const result = await CalendarService.listEvents();
+      expect(result.events[0].start).toBe('2026-08-15T10:00:00Z');
+      expect(result.events[0].end).toBe('2026-08-15T11:00:00Z');
+    });
+
     it('handles empty response', async () => {
       vi.spyOn(CalendarClient.prototype, 'listEvents').mockResolvedValue({});
       const result = await CalendarService.listEvents();

@@ -109,6 +109,87 @@ export interface SearchRepositoriesResult {
   pagination: PaginationInfo;
 }
 
+/** Raw issue payload returned by the GitHub REST API (GET /repos/{owner}/{repo}/issues). */
+interface RawIssue {
+  id?: number;
+  number?: number;
+  title?: string;
+  state?: string;
+  body?: string | null;
+  user?: { login?: string } | null;
+  labels?: Array<{ name?: string }>;
+  created_at?: string | null;
+  updated_at?: string | null;
+  html_url?: string;
+  comments?: number;
+  /** Present on pull requests — the issues API returns PRs alongside issues. */
+  pull_request?: unknown;
+}
+
+export interface IssueSummary {
+  id: number;
+  number: number;
+  title: string;
+  state: string;
+  body: string | null;
+  user: string | null;
+  labels: string[];
+  createdAt: string | null;
+  updatedAt: string | null;
+  htmlUrl: string;
+  comments: number;
+}
+
+export interface ListIssuesParams {
+  state?: "open" | "closed" | "all";
+  perPage?: number;
+}
+
+export interface ListIssuesResult {
+  issues: IssueSummary[];
+  pagination: PaginationInfo;
+}
+
+/** Raw repository event payload returned by GET /repos/{owner}/{repo}/events. */
+interface RawRepoEvent {
+  id?: string;
+  type?: string;
+  created_at?: string | null;
+  actor?: { login?: string } | null;
+  payload?: {
+    action?: string;
+    ref?: string;
+    size?: number;
+    commits?: Array<{ message?: string }>;
+    issue?: { number?: number; title?: string };
+    pull_request?: { number?: number; title?: string };
+  };
+}
+
+export interface RepositoryEventSummary {
+  id: string;
+  type: string;
+  actor: string | null;
+  createdAt: string | null;
+  /** Event-specific action (e.g. "opened", "closed") when the payload has one. */
+  action: string | null;
+  /** Git ref for push events. */
+  ref: string | null;
+  /** Number of commits in a push event. */
+  commitCount: number | null;
+  /** Issue number for issue events. */
+  issueNumber: number | null;
+  /** Pull request number for PR events. */
+  pullRequestNumber: number | null;
+  /** Issue/PR title when present. */
+  title: string | null;
+}
+
+export interface ListRepositoryEventsResult {
+  events: RepositoryEventSummary[];
+  pagination: PaginationInfo;
+}
+
 // ──────────────────────────────────────────────
 //  Service
 // ──────────────────────────────────────────────
@@ -292,6 +373,116 @@ export class GitHubService {
       logger.error("GitHubService: searchRepositories failed", logMeta({ error: String(err) }));
       return GitHubService.handleError(err, integration.id);
     }
+  }
+
+  // ── Issues ─────────────────────────────────
+
+  /**
+   * List issues for a repository.
+   * GET /repos/{owner}/{repo}/issues — the GitHub issues API returns pull
+   * requests alongside issues, so PRs are filtered out (`pull_request` field).
+   */
+  static async listIssues(owner: string, repo: string, params: ListIssuesParams = {}): Promise<ListIssuesResult> {
+    logger.info("GitHubService: listIssues request received", logMeta({ owner, repo, params }));
+    const { client, integration } = await GitHubService.createClientForUser();
+    try {
+      const res = await client.get<RawIssue[]>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/issues`, {
+        query: {
+          state: params.state ?? "open",
+          per_page: params.perPage,
+          sort: "created",
+          direction: "desc",
+        },
+      });
+
+      const issues = (Array.isArray(res.data) ? res.data : [])
+        .filter((issue) => issue.pull_request === undefined)
+        .map((issue) => ({
+          id: issue.id ?? 0,
+          number: issue.number ?? 0,
+          title: issue.title ?? "",
+          state: issue.state ?? "open",
+          body: issue.body ?? null,
+          user: issue.user?.login ?? null,
+          labels: (issue.labels ?? []).map((label) => label.name ?? "").filter((name) => name.length > 0),
+          createdAt: issue.created_at ?? null,
+          updatedAt: issue.updated_at ?? null,
+          htmlUrl: issue.html_url ?? "",
+          comments: issue.comments ?? 0,
+        }));
+
+      logger.info("GitHubService: issues returned", logMeta({ owner, repo, count: issues.length }));
+      // Log activity asynchronously — never block the response
+      logActivity({
+        userId: integration.userId,
+        platform: PLATFORM,
+        action: "Viewed Issues",
+        details: `Listed ${issues.length} issues for ${owner}/${repo}`,
+        integrationId: integration.id,
+      }).catch((e) => logger.debug("logActivity failed", logMeta({ error: String(e) })));
+
+      return { issues, pagination: res.pagination };
+    } catch (err) {
+      logger.error("GitHubService: listIssues failed", logMeta({ owner, repo, error: String(err) }));
+      return GitHubService.handleError(err, integration.id);
+    }
+  }
+
+  // ── Repository events ──────────────────────
+
+  /**
+   * List recent activity events for a repository (pushes, issues, PRs).
+   * GET /repos/{owner}/{repo}/events — event payloads are normalized into a
+   * flat shape so callers never touch raw GitHub payloads.
+   */
+  static async listRepositoryEvents(owner: string, repo: string, perPage = 20): Promise<ListRepositoryEventsResult> {
+    logger.info("GitHubService: listRepositoryEvents request received", logMeta({ owner, repo, perPage }));
+    const { client, integration } = await GitHubService.createClientForUser();
+    try {
+      const res = await client.get<RawRepoEvent[]>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/events`, {
+        query: { per_page: perPage },
+      });
+
+      const events = (Array.isArray(res.data) ? res.data : []).map((event) => GitHubService.toRepositoryEvent(event));
+
+      logger.info("GitHubService: events returned", logMeta({ owner, repo, count: events.length }));
+      // Log activity asynchronously — never block the response
+      logActivity({
+        userId: integration.userId,
+        platform: PLATFORM,
+        action: "Viewed Repository Activity",
+        details: `Listed ${events.length} events for ${owner}/${repo}`,
+        integrationId: integration.id,
+      }).catch((e) => logger.debug("logActivity failed", logMeta({ error: String(e) })));
+
+      return { events, pagination: res.pagination };
+    } catch (err) {
+      logger.error("GitHubService: listRepositoryEvents failed", logMeta({ owner, repo, error: String(err) }));
+      return GitHubService.handleError(err, integration.id);
+    }
+  }
+
+  /** Normalize a raw repository event payload into {@link RepositoryEventSummary}. */
+  static toRepositoryEvent(raw: RawRepoEvent): RepositoryEventSummary {
+    const payload = raw.payload ?? {};
+    const commitCount =
+      payload.size !== undefined
+        ? payload.size
+        : Array.isArray(payload.commits)
+          ? payload.commits.length
+          : null;
+    return {
+      id: raw.id ?? "",
+      type: raw.type ?? "",
+      actor: raw.actor?.login ?? null,
+      createdAt: raw.created_at ?? null,
+      action: payload.action ?? null,
+      ref: payload.ref ?? null,
+      commitCount,
+      issueNumber: payload.issue?.number ?? null,
+      pullRequestNumber: payload.pull_request?.number ?? null,
+      title: payload.issue?.title ?? payload.pull_request?.title ?? null,
+    };
   }
 
   // ── Error handling ─────────────────────────

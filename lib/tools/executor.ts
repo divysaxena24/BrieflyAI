@@ -21,6 +21,7 @@
  * map outputs deterministically.
  */
 
+import { AppError } from "@/lib/errors";
 import type { ExecutionPlan, ExecutionStep } from "./plan";
 import type { ToolRegistry } from "./registry";
 import type { ToolContext } from "./types";
@@ -34,6 +35,12 @@ export interface ToolError {
   readonly code: string;
   /** Human-readable detail. */
   readonly message: string;
+  /**
+   * HTTP status when the underlying failure was an AppError (e.g. 404 for a
+   * missing repository, 401 for an expired integration session). Absent for
+   * executor-internal failures (timeout, cancellation, …).
+   */
+  readonly status?: number;
 }
 
 /** Result of executing one planned step. */
@@ -231,6 +238,12 @@ export class ToolExecutor {
       if (err instanceof ToolCancelledError) {
         return this.cancelledResult(step, "Step was cancelled", startedAt);
       }
+      // Preserve AppError code + status so auth/not-found failures surface
+      // cleanly through the orchestrator (e.g. a Discord session that needs
+      // reconnecting, a GitHub repo that was not found).
+      if (err instanceof AppError) {
+        return this.failureResult(step, err.code ?? "execution_error", err.message, startedAt, err.status);
+      }
       const message = err instanceof Error ? err.message : String(err);
       return this.failureResult(step, "execution_error", message, startedAt);
     }
@@ -268,12 +281,12 @@ export class ToolExecutor {
     });
   }
 
-  private failureResult(step: ExecutionStep, code: string, message: string, startedAt: number): StepResult {
+  private failureResult(step: ExecutionStep, code: string, message: string, startedAt: number, status?: number): StepResult {
     return {
       stepId: step.stepId,
       toolId: step.toolId,
       status: "failure",
-      error: { code, message },
+      error: { code, message, ...(status !== undefined ? { status } : {}) },
       durationMs: Date.now() - startedAt,
     };
   }

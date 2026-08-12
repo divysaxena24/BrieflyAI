@@ -237,6 +237,30 @@ export const TelegramTokenGuide: React.FC = () => {
               Open BotFather
               <ExternalLinkIcon size={13} className="h-3 w-3 opacity-80" />
             </a>
+
+            {/* Chat discovery callout — Telegram bots can only see chats they've been added to */}
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+              <h4 className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                <InfoIcon size={13} className="h-3 w-3 shrink-0" />
+                After connecting: make chats visible
+              </h4>
+              <ul className="mt-1.5 space-y-1.5 text-[11px] leading-relaxed text-emerald-700/90 dark:text-emerald-300/90">
+                <li className="flex items-start gap-1.5">
+                  <CheckCircleIcon size={11} className="mt-0.5 h-2.5 w-2.5 shrink-0 text-emerald-500" />
+                  Telegram bots can only see chats they&apos;ve actually interacted with.
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <CheckCircleIcon size={11} className="mt-0.5 h-2.5 w-2.5 shrink-0 text-emerald-500" />
+                  Add the bot to a group or channel, or send it a direct message (e.g.{" "}
+                  <code className="rounded bg-emerald-100 px-1 font-mono text-[10px] dark:bg-emerald-900/60">/start</code>
+                  ).
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <CheckCircleIcon size={11} className="mt-0.5 h-2.5 w-2.5 shrink-0 text-emerald-500" />
+                  Until then, the AI assistant will report &quot;no accessible chats&quot; instead of inventing data.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   MobileMenuIcon,
   ThemeSunIcon,
@@ -92,11 +93,14 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-white dark:ring-zinc-900" />
         </button>
 
-        {/* AI Quick Assistant Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-200/80 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/50 dark:border-brand-900/60 dark:text-brand-300">
+        {/* AI Quick Assistant Pill — links to the AI chat */}
+        <Link
+          href="/dashboard/ai-chat"
+          className="hidden sm:flex items-center gap-1.5 rounded-full bg-brand-50 border border-brand-200/80 px-3 py-1 text-xs font-semibold text-brand-700 transition-all hover:bg-brand-100 active:scale-95 dark:bg-brand-950/50 dark:border-brand-900/60 dark:text-brand-300 dark:hover:bg-brand-900/60"
+        >
           <AiSparklesIcon size={14} className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400 animate-pulse" />
           AI Active
-        </div>
+        </Link>
       </div>
     </header>
   );

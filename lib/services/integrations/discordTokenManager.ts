@@ -75,8 +75,19 @@ async function doRefresh(integrationId: string) {
 
   const refreshToken = row.refreshToken;
   if (!refreshToken) {
+    // No refresh token to rotate — the Discord session cannot be recovered
+    // automatically. Mark the integration as needing reconnection and surface
+    // a clean, standardized auth error instead of a cryptic "Refresh token
+    // missing" message. (Never wipe the row here — reconnecting will replace
+    // it via the OAuth callback.)
     logger.warn("DiscordTokenManager: missing refresh token for integration", { integrationId });
-    throw new AppError("Refresh token missing", 401, "missing_refresh_token");
+    try {
+      await updateIntegrationStatus(integrationId, "needs_reconnect");
+      logger.info("DiscordTokenManager: integration marked needs_reconnect", { integrationId });
+    } catch (e) {
+      logger.warn("DiscordTokenManager: failed to update integration status", { integrationId, error: String(e) });
+    }
+    throw new AppError("Discord needs to be reconnected — your Discord session expired", 401, "reconnect_required");
   }
 
   const clientId = process.env.DISCORD_CLIENT_ID;
@@ -180,9 +191,28 @@ async function doRefresh(integrationId: string) {
     : new AppError("Token refresh failed", 502, "token_refresh_failed");
 }
 
+/**
+ * In-flight refresh promises keyed by integration id.
+ *
+ * Discord rotates refresh tokens on every use, so two concurrent 401s must
+ * never fire two refreshes with the same (about-to-be-rotated) refresh token —
+ * the loser would receive `invalid_grant` and falsely mark a recoverable
+ * session as needing reconnection. Concurrent callers share one refresh.
+ */
+const inFlightRefreshes = new Map<string, Promise<{ access_token: string; expiresAt: Date | null }>>();
+
 export async function refreshToken(integrationId: string) {
   logger.info("DiscordTokenManager: refresh started", { integrationId });
-  return doRefresh(integrationId);
+  const existing = inFlightRefreshes.get(integrationId);
+  if (existing) return existing;
+
+  const refresh = doRefresh(integrationId).finally(() => {
+    // Always release the slot — on success (token rotated + persisted) and on
+    // failure (AppError) alike, so the next request can refresh again.
+    inFlightRefreshes.delete(integrationId);
+  });
+  inFlightRefreshes.set(integrationId, refresh);
+  return refresh;
 }
 
 export async function invalidate(integrationId: string) {
@@ -220,7 +250,8 @@ export async function getValidAccessToken(integrationId: string, thresholdSecond
   const expiresAt = row.expiresAt ?? null;
   if (!expiresAt) {
     logger.warn("DiscordTokenManager: token has no expiry, attempting refresh", { integrationId });
-    // try to refresh once
+    // try to refresh once (a missing refresh token surfaces as a clean
+    // reconnect_required AppError from doRefresh)
     const refreshed = await refreshToken(integrationId);
     return { accessToken: refreshed.access_token, expiresAt: refreshed.expiresAt };
   }

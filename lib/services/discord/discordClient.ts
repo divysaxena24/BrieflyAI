@@ -81,6 +81,12 @@ export class DiscordClient {
   /**
    * Core request method: resolves the token, calls safeFetch(), and maps errors.
    * Returns a structured response including rate-limit info.
+   *
+   * Discord OAuth2 access tokens expire (~7 days). When Discord rejects the
+   * stored token with a 401, the client refreshes the token once (the refresh
+   * token is rotated + persisted by DiscordTokenManager) and retries the same
+   * request before surfacing an error. This transparently recovers from a
+   * stale/expired access token instead of failing the whole request.
    */
   async authenticatedFetch<T = unknown>(path: string, opts: DiscordRequestOptions = {}): Promise<DiscordResponse<T>> {
     const accessToken = await this.resolveAccessToken();
@@ -100,13 +106,40 @@ export class DiscordClient {
 
     logger.debug("Discord: calling Discord API", logMeta({ url: url.pathname, method: init.method }));
 
-    const res = await safeFetch(
+    let res = await safeFetch(
       url.toString(),
       init,
       logMeta({ url: url.pathname }),
       opts.timeoutMs ?? 10000,
       opts.maxRetries ?? 1
     );
+
+    // A 401 means the access token is stale/expired — refresh once and retry.
+    // If the refresh fails, the manager already marks the integration as
+    // needing reconnection; surface that (more accurate) error instead of the
+    // raw Discord "401: Unauthorized".
+    if (res.status === 401) {
+      try {
+        const refreshed = await discordTokenManager.refreshToken(this.integrationId);
+        if (refreshed?.access_token) {
+          const retryHeaders = { ...this.buildHeaders(refreshed.access_token), ...(opts.headers ?? {}) };
+          const retryInit: RequestInit = { ...init, headers: retryHeaders };
+          res = await safeFetch(
+            url.toString(),
+            retryInit,
+            logMeta({ url: url.pathname, retry: true }),
+            opts.timeoutMs ?? 10000,
+            opts.maxRetries ?? 1
+          );
+        }
+      } catch (refreshErr) {
+        // Refresh failed (missing/invalid refresh token, network, …). Rethrow
+        // the AppError from the token manager — it carries a clean
+        // "reconnect required" message and the integration is already marked
+        // needs_reconnect where appropriate.
+        if (refreshErr instanceof AppError) throw refreshErr;
+      }
+    }
 
     // Best-effort JSON body parsing (Discord returns JSON for errors too)
     const text = await res.text().catch(() => "");
