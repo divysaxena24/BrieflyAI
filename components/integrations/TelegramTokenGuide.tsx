@@ -212,7 +212,7 @@ export const TelegramTokenGuide: React.FC = () => {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50/60 dark:border-zinc-700 dark:bg-zinc-800/40">
+      <div className="min-h-0 overflow-x-hidden rounded-xl border border-zinc-200 bg-zinc-50/60 dark:border-zinc-700 dark:bg-zinc-800/40">
       {/* ── Toggle header ── */}
       <button
         type="button"
@@ -247,12 +247,12 @@ export const TelegramTokenGuide: React.FC = () => {
         role="region"
         aria-label="How to connect your Telegram bot"
         inert={!isOpen}
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+              className={`grid min-h-0 transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
           isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div className="overflow-hidden">
-          <div className="space-y-4 border-t border-zinc-200 px-4 pb-4 pt-3.5 dark:border-zinc-700">
+        <div className="min-h-0 overflow-hidden">
+          <div className="space-y-4 border-t border-zinc-200 px-4 pb-4 pt-3.5 dark:border-zinc-700 min-h-0">
             {/* Info callout */}
             <div className="flex items-start gap-2.5 rounded-xl border border-sky-200 bg-sky-50/70 p-3 dark:border-sky-900/60 dark:bg-sky-950/30">
               <InfoIcon size={15} className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />

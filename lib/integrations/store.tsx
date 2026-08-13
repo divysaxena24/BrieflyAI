@@ -255,9 +255,6 @@ export function IntegrationStoreProvider({
   // Fetch on mount
   useEffect(() => {
     mountedRef.current = true;
-    // The react-hooks rule cannot model awaits inside fetchIntegrations; the
-    // fetch is async and all setState runs in promise continuations.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchIntegrations();
     return () => {
       mountedRef.current = false;

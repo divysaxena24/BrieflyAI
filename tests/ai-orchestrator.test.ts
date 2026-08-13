@@ -114,10 +114,6 @@ function mockRegistry(): ToolRegistry {
   };
   const discordService = {
     listGuilds: vi.fn(async () => ({ guilds: [{ id: "g1", name: "Acme", icon: null, owner: false, permissions: "", memberCount: null, features: [], joinedAt: null }], pagination: { hasMore: false } })),
-    listChannels: vi.fn(async () => ({ channels: [{ id: "c1", guildId: "g1", name: "general", type: 0, position: 0, topic: null, parentId: null, nsfw: false }] })),
-    listMessages: vi.fn(async () => ({
-      messages: [{ id: "d1", channelId: "c1", authorId: "a1", authorName: "Alice", authorAvatar: null, content: "Ship it", timestamp: "2026-08-10T00:00:00Z", editedTimestamp: null, attachments: [], embeds: [], pinned: false, mentions: [] }],
-    })),
   };
   const telegramService = {
     listChats: vi.fn(async () => ({ chats: [{ id: 123, title: "Dev", username: null, type: "group" }] })),
@@ -142,9 +138,8 @@ function mockRegistry(): ToolRegistry {
     "github.repositorySummary": githubService,
     "github.recentActivity": githubService,
     "github.openIssuesSummary": githubService,
-    "discord.channelSummary": discordService,
-    "discord.recentMessages": discordService,
-    "discord.extractActionItems": discordService,
+    "discord.listGuilds": discordService,
+    "discord.botRequired": discordService,
     "telegram.chatSummary": telegramService,
     "telegram.recentMessages": telegramService,
     "telegram.newsDigest": telegramService,
@@ -178,9 +173,13 @@ describe("routeQuery", () => {
     ["What are the important open GitHub issues?", "github.openIssuesSummary"],
     ["What happened in my briefly repo?", "github.recentActivity"],
     ["Give me a summary of my BrieflyAI GitHub repo", "github.repositorySummary"],
-    ["Extract action items from Discord", "discord.extractActionItems"],
-    ["What happened in my Discord channels today?", "discord.channelSummary"],
-    ["Show me recent Discord messages", "discord.recentMessages"],
+    ["Extract action items from Discord", "discord.botRequired"],
+    ["What happened in my Discord channels today?", "discord.botRequired"],
+    ["What happened in #general?", "discord.botRequired"],
+    ["Show me recent Discord messages", "discord.botRequired"],
+    ["Show my Discord servers", "discord.listGuilds"],
+    ["Which Discord servers am I in?", "discord.listGuilds"],
+    ["Summarize my Discord servers", "discord.listGuilds"],
     ["Summarize my Telegram updates", "telegram.newsDigest"],
     ["Summarize the Telegram chat", "telegram.chatSummary"],
     ["Show me recent Telegram messages", "telegram.recentMessages"],
@@ -260,6 +259,25 @@ describe("AIOrchestrator", () => {
     expect(result.response).toBe("You have 1 urgent email.");
     expect(result.generatedAt).toBeTruthy();
     expect(calls.length).toBeGreaterThan(0);
+  });
+
+  it("short-circuits informational tools: returns the canned Discord Bot Required message without Groq summarization", async () => {
+    const registry = mockRegistry();
+    const { stub, calls } = makeGroqStub({ jsonSelection: { tool: "discord.botRequired" } });
+    const planner = new AIToolPlanner({ registry, groq: stub });
+    const orchestrator = new AIOrchestrator({ registry, planner, groq: stub });
+
+    const result = await orchestrator.handle({ query: "Show me recent Discord messages" });
+
+    expect(result.success).toBe(true);
+    expect(result.tool).toBe("discord.botRequired");
+    // The exact canned explanation is returned (HTTP 200 semantics — no error,
+    // no unsupported Discord API call, no reconnect prompt).
+    expect(result.response).toContain("requires installing a Discord Bot");
+    expect(result.aiError).toBeUndefined();
+    // The planner made exactly one Groq call (tool selection); the
+    // summarization step was skipped entirely.
+    expect(calls.length).toBe(1);
   });
 
   it("returns response null + aiError when Groq summarization fails (real data preserved)", async () => {

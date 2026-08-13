@@ -1,10 +1,14 @@
 /**
  * AI layer — AI tools composition.
  *
- * `createAITools()` returns all 20 integration AI tools (Gmail, Calendar,
+ * `createAITools()` returns all integration AI tools (Gmail, Calendar,
  * Drive, GitHub, Discord, Telegram) in a fixed order, each wrapping the
  * existing production service. `createAIToolRegistry()` wraps them in the
  * existing immutable `ToolRegistry`.
+ *
+ * Discord exposes only OAuth-supported capabilities (listing the user's
+ * servers) plus a canned "Discord Bot Required" explanation for channel /
+ * message reads, which need a bot token that OAuth does not provide.
  *
  * The tools are pure data retrieval + normalization; the Groq natural-language
  * summaries are produced by the orchestrator.
@@ -39,11 +43,7 @@ import {
   GitHubRecentActivityTool,
   GitHubOpenIssuesSummaryTool,
 } from "./githubTools";
-import {
-  DiscordChannelSummaryTool,
-  DiscordRecentMessagesTool,
-  DiscordExtractActionItemsTool,
-} from "./discordTools";
+import { DiscordListGuildsTool, DiscordBotRequiredTool } from "./discordTools";
 import {
   TelegramChatSummaryTool,
   TelegramRecentMessagesTool,
@@ -72,16 +72,15 @@ export const AI_TOOL_IDS: readonly string[] = [
   "github.recentActivity",
   "github.openIssuesSummary",
   // Discord
-  "discord.channelSummary",
-  "discord.recentMessages",
-  "discord.extractActionItems",
+  "discord.listGuilds",
+  "discord.botRequired",
   // Telegram
   "telegram.chatSummary",
   "telegram.recentMessages",
   "telegram.newsDigest",
 ] as const;
 
-/** Create the 20 AI tools, each with its production service default. */
+/** Create the AI tools, each with its production service default. */
 export function createAITools(): readonly Tool[] {
   return [
     // Gmail
@@ -104,9 +103,8 @@ export function createAITools(): readonly Tool[] {
     new GitHubRecentActivityTool(),
     new GitHubOpenIssuesSummaryTool(),
     // Discord
-    new DiscordChannelSummaryTool(),
-    new DiscordRecentMessagesTool(),
-    new DiscordExtractActionItemsTool(),
+    new DiscordListGuildsTool(),
+    new DiscordBotRequiredTool(),
     // Telegram
     new TelegramChatSummaryTool(),
     new TelegramRecentMessagesTool(),
@@ -114,7 +112,7 @@ export function createAITools(): readonly Tool[] {
   ];
 }
 
-/** Build a registry containing exactly the 20 AI tools. */
+/** Build a registry containing exactly the AI tools. */
 export function createAIToolRegistry(): ToolRegistry {
   return new ToolRegistry(createAITools());
 }
@@ -138,9 +136,8 @@ export {
   GitHubRepositorySummaryTool,
   GitHubRecentActivityTool,
   GitHubOpenIssuesSummaryTool,
-  DiscordChannelSummaryTool,
-  DiscordRecentMessagesTool,
-  DiscordExtractActionItemsTool,
+  DiscordListGuildsTool,
+  DiscordBotRequiredTool,
   TelegramChatSummaryTool,
   TelegramRecentMessagesTool,
   TelegramNewsDigestTool,
@@ -157,5 +154,5 @@ export type {
 } from "./calendarTools";
 export type { DriveToolService } from "./driveTools";
 export type { GitHubToolService, ResolvedRepository } from "./githubTools";
-export type { DiscordToolService, ResolvedChannel } from "./discordTools";
+export type { DiscordToolService } from "./discordTools";
 export type { TelegramToolService, ResolvedChat } from "./telegramTools";

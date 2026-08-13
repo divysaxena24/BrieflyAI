@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/dashboard";
 import {
   MessageIcon,
-  ClockReminderIcon,
   PlatformLinkIcon,
   UpgradeZapIcon,
   GmailMailIcon,
@@ -14,6 +13,8 @@ import {
   TrendingUpIcon,
   ActivityStreamIcon,
   CheckCircleIcon,
+  FeaturesIcon,
+  ListChecksIcon,
 } from "@/components/dashboard/icons";
 
 /** Derive initials fallback for the avatar */
@@ -32,9 +33,9 @@ export default async function DashboardPage() {
 
   const stats = [
     { label: "Messages Summarized", value: "128", icon: MessageIcon, change: "+24% this week", color: "text-brand-500 bg-brand-50 dark:bg-brand-950/50" },
-    { label: "Active Reminders", value: "6", icon: ClockReminderIcon, change: "2 due today", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/50" },
+    { label: "AI Features", value: "30", icon: ListChecksIcon, change: "Across 6 integrations", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/50" },
     { label: "Connected Platforms", value: "2 / 3", icon: PlatformLinkIcon, change: "Gmail, Telegram", color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/50" },
-    { label: "AI Credits Used", value: "450 / 1000", icon: UpgradeZapIcon, change: "Pro Plan active", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/50" },
+    { label: "AI Credits Used", value: "450 / 1000", icon: UpgradeZapIcon, change: "Pro Plan active", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/50" },
   ];
 
   const platforms = [
@@ -51,10 +52,10 @@ export default async function DashboardPage() {
         badge="Live Metrics"
         action={
           <Link
-            href="/dashboard/ai-agent"
+            href="/dashboard/ai-chat"
             className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-500"
           >
-            <AiSparklesIcon size={16} /> Launch AI Agent
+            <AiSparklesIcon size={16} /> Open AI Assistant
           </Link>
         }
       />
@@ -74,7 +75,7 @@ export default async function DashboardPage() {
                 <AiSparklesIcon size={24} className="h-6 w-6 text-amber-300 animate-pulse" />
               </div>
               <p className="mt-1 text-sm text-brand-100">
-                Your AI agent is active and monitoring <span className="font-semibold text-white">{user.email}</span>
+                Your AI assistant is ready and connected to <span className="font-semibold text-white">{user.email}</span>
               </p>
             </div>
           </div>
@@ -202,7 +203,7 @@ export default async function DashboardPage() {
 
           <div className="space-y-4">
             {[
-              { time: "Just now", event: "Inbox Daily Brief generated", detail: "Summarized 14 new emails from Gmail", dot: "bg-brand-500" },
+              { time: "Just now", event: "Inbox summary generated", detail: "Summarized 14 new emails from Gmail", dot: "bg-brand-500" },
               { time: "10 min ago", event: "Drive sync completed", detail: "3 new documents indexed from Google Drive", dot: "bg-emerald-500" },
               { time: "1 hour ago", event: "Telegram digest ready", detail: "3 key decisions extracted from Dev Channel", dot: "bg-sky-500" },
             ].map((item, i) => (
@@ -227,9 +228,9 @@ export default async function DashboardPage() {
           </h2>
           <div className="space-y-3">
             {[
-              { label: "Generate Daily Brief", icon: AiSparklesIcon, href: "/dashboard/briefings", desc: "Run instant digest across all channels" },
-              { label: "Create AI Reminder", icon: ClockReminderIcon, href: "/dashboard/alerts", desc: "Set smart automated notifications" },
-              { label: "Connect Platform", icon: PlatformLinkIcon, href: "/dashboard/integrations", desc: "Integrate new messaging channel" },
+              { label: "Explore AI Features", icon: FeaturesIcon, href: "/dashboard/features", desc: "Browse every capability the AI Assistant offers" },
+              { label: "Open AI Assistant", icon: MessageIcon, href: "/dashboard/ai-chat", desc: "Ask about your connected integrations" },
+              { label: "Connect Platform", icon: PlatformLinkIcon, href: "/dashboard/integrations", desc: "Integrate a new messaging channel" },
             ].map((action) => {
               const Icon = action.icon;
               return (

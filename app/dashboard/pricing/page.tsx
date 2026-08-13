@@ -1,6 +1,6 @@
 import React from "react";
 import { PageHeader } from "@/components/dashboard";
-import { UpgradeZapIcon, CheckCircleIcon, AiSparklesIcon } from "@/components/dashboard/icons";
+import { CheckCircleIcon, AiSparklesIcon } from "@/components/dashboard/icons";
 
 export default function PricingPage() {
   const plans = [
@@ -11,9 +11,9 @@ export default function PricingPage() {
       desc: "For individuals looking to automate basic email & chat digests.",
       features: [
         "100 AI Summary Credits / mo",
-        "Connect up to 2 Channels (Gmail & Telegram)",
+        "Connect your first integrations",
         "Standard Processing Speed",
-        "Daily Briefing Email",
+        "AI Summaries on Demand",
       ],
       cta: "Current Plan",
       current: true,
@@ -23,13 +23,13 @@ export default function PricingPage() {
       name: "Pro Agent",
       price: "$19",
       period: "/ month",
-      desc: "For professionals requiring real-time alerts, unlimited summaries, and custom agent rules.",
+      desc: "For professionals who need unlimited summaries, priority processing, and every AI feature.",
       features: [
         "Unlimited AI Summary Credits",
-        "Connect all 3 Channels (Gmail, Telegram, Outlook)",
+        "Connect all 6 integrations (Gmail, Calendar, Drive, GitHub, Discord, Telegram)",
         "Priority High-Speed AI Processing",
-        "Custom Persona & System Instructions",
-        "Smart Automated Reminders",
+        "Custom Instructions & Preferences",
+        "All AI Features Included",
         "24/7 Priority Support",
       ],
       cta: "Upgrade to Pro",

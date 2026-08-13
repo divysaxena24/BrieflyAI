@@ -109,12 +109,17 @@ export class DiscordClient {
       init.body = typeof opts.body === "string" ? opts.body : JSON.stringify(opts.body);
     }
 
-    logger.debug("Discord: calling Discord API", logMeta({ url: url.pathname, method: init.method, tokenHash }));
+    // Auth scheme (Bearer/Bot/…) extracted from the header — logs the *type*
+    // of credential, never the credential itself. tokenHash is a one-way
+    // sha256 fingerprint of the access token.
+    const authScheme = headers.Authorization?.trim().split(/\s+/)[0] ?? "none";
+
+    logger.debug("Discord: calling Discord API", logMeta({ url: url.toString(), method: init.method, authScheme, tokenHash }));
 
     let res = await safeFetch(
       url.toString(),
       init,
-      logMeta({ url: url.pathname, tokenHash }),
+      logMeta({ url: url.toString(), authScheme, tokenHash }),
       opts.timeoutMs ?? 10000,
       opts.maxRetries ?? 1
     );
@@ -131,10 +136,11 @@ export class DiscordClient {
           logger.info("DiscordClient: token refreshed, retrying request", logMeta({ integrationId: this.integrationId, refreshedHash }));
           const retryHeaders = { ...this.buildHeaders(refreshed.access_token), ...(opts.headers ?? {}) };
           const retryInit: RequestInit = { ...init, headers: retryHeaders };
+          const retryScheme = retryHeaders.Authorization?.trim().split(/\s+/)[0] ?? "none";
           res = await safeFetch(
             url.toString(),
             retryInit,
-            logMeta({ url: url.pathname, retry: true, refreshedHash }),
+            logMeta({ url: url.toString(), retry: true, authScheme: retryScheme, refreshedHash }),
             opts.timeoutMs ?? 10000,
             opts.maxRetries ?? 1
           );
@@ -160,6 +166,12 @@ export class DiscordClient {
     }
 
     if (!res.ok) {
+      // Log the exact Discord response body before surfacing the mapped error.
+      // This is the ground truth for diagnosing rejected requests — e.g. a
+      // perfectly valid token still gets 401 when the endpoint requires a
+      // different auth type (Bot vs Bearer) or additional permission.
+      const bodyLog = text.length > 2000 ? `${text.slice(0, 2000)} …(truncated ${text.length} chars)` : text;
+      logger.error("Discord: non-OK response", logMeta({ url: url.toString(), status: res.status, authScheme, body: bodyLog }));
       throw mapDiscordError(res.status, data, res.headers);
     }
 

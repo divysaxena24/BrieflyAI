@@ -5,11 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   DashboardIcon,
-  AiAgentIcon,
   MessageIcon,
-  BriefingsIcon,
+  FeaturesIcon,
   IntegrationsIcon,
-  AlertsIcon,
   SettingsIcon,
   AiSparklesIcon,
   CollapseLeftIcon,
@@ -31,11 +29,9 @@ export interface NavItemConfig {
 
 export const defaultNavItems: NavItemConfig[] = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
-  { id: "ai-chat", label: "AI Assistant", href: "/dashboard/ai-chat", icon: MessageIcon, badge: "New", badgeColor: "bg-violet-500 text-white" },
-  { id: "ai-agent", label: "AI Agent", href: "/dashboard/ai-agent", icon: AiAgentIcon },
-  { id: "briefings", label: "Briefings", href: "/dashboard/briefings", icon: BriefingsIcon, badge: 3, badgeColor: "bg-brand-500 text-white" },
+  { id: "ai-chat", label: "AI Assistant", href: "/dashboard/ai-chat", icon: MessageIcon },
+  { id: "features", label: "Features", href: "/dashboard/features", icon: FeaturesIcon },
   { id: "integrations", label: "Integrations", href: "/dashboard/integrations", icon: IntegrationsIcon },
-  { id: "alerts", label: "Alerts", href: "/dashboard/alerts", icon: AlertsIcon },
   { id: "settings", label: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
 ];
 

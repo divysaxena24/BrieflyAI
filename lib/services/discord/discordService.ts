@@ -6,6 +6,27 @@ import { DiscordClient } from "./discordClient";
 
 const PLATFORM = "discord"; // matches the platform stored by OAuth callback
 
+// ──────────────────────────────────────────────
+//  Discord bot limitation
+// ──────────────────────────────────────────────
+
+/**
+ * Canned explanation for features that need a Discord Bot.
+ *
+ * Discord's OAuth API grants no scope for reading guild channels or
+ * messages: GET /guilds/{guildId}/channels and GET /channels/{channelId}/messages
+ * are bot-only endpoints. An OAuth user Bearer token is rejected with 401
+ * regardless of validity, and no amount of OAuth scopes or token refreshes
+ * changes that.
+ */
+export const DISCORD_BOT_REQUIRED_TITLE = "Discord Bot Required";
+export const DISCORD_BOT_REQUIRED_CODE = "discord_bot_required";
+export const DISCORD_BOT_REQUIRED_MESSAGE =
+  "Discord's OAuth API does not allow applications to read server channels or messages using a user login. " +
+  "BrieflyAI currently connects using OAuth, which only grants access to your Discord profile and server list. " +
+  "Reading channels and messages requires installing a Discord Bot in the server. " +
+  "This feature is planned for a future release.";
+
 /**
  * Structured log meta with the platform tag, mirroring the google-logger style.
  */
@@ -50,114 +71,23 @@ export interface ListGuildsResult {
   pagination: { hasMore: boolean };
 }
 
-/** Raw channel payload returned by the Discord REST API (GET /guilds/{guildId}/channels). */
-interface RawChannel {
-  id?: string;
-  guild_id?: string;
-  name?: string;
-  type?: number;
-  position?: number;
-  topic?: string | null;
-  parent_id?: string | null;
-  nsfw?: boolean;
-}
-
-export interface ChannelSummary {
-  id: string;
-  guildId: string;
-  name: string;
-  type: number;
-  position: number;
-  topic: string | null;
-  parentId: string | null;
-  nsfw: boolean;
-}
-
-export interface ListChannelsResult {
-  channels: ChannelSummary[];
-}
-
-// Discord channel types that can carry readable messages (the Read Channels
-// feature). Voice/category/thread/stage channels are not message-bearing for
-// this product, so they are filtered out.
-const SUPPORTED_CHANNEL_TYPES = new Set([0, 5, 15, 16]); // GUILD_TEXT, GUILD_ANNOUNCEMENT, GUILD_FORUM, GUILD_MEDIA
-
-/** Raw message payload returned by the Discord REST API (GET /channels/{channelId}/messages). */
-interface RawMessage {
-  id?: string;
-  channel_id?: string;
-  author?: {
-    id?: string;
-    username?: string;
-    global_name?: string | null;
-    avatar?: string | null;
-  } | null;
-  content?: string;
-  timestamp?: string | null;
-  edited_timestamp?: string | null;
-  attachments?: Array<{ id?: string; filename?: string; url?: string }>;
-  embeds?: Array<{ title?: string | null; description?: string | null; url?: string | null }>;
-  pinned?: boolean;
-  mentions?: Array<{ id?: string; username?: string; global_name?: string | null }>;
-}
-
-export interface MessageAttachment {
-  id: string;
-  filename: string;
-  url: string;
-}
-
-export interface MessageEmbed {
-  title: string | null;
-  description: string | null;
-  url: string | null;
-}
-
-export interface MessageMention {
-  id: string;
-  username: string;
-}
-
-export interface MessageSummary {
-  id: string;
-  channelId: string;
-  authorId: string | null;
-  authorName: string | null;
-  authorAvatar: string | null;
-  content: string;
-  timestamp: string | null;
-  editedTimestamp: string | null;
-  attachments: MessageAttachment[];
-  embeds: MessageEmbed[];
-  pinned: boolean;
-  mentions: MessageMention[];
-}
-
+/** Parameters kept for the unsupported (bot-only) listMessages surface. */
 export interface ListMessagesParams {
   limit?: number;
   before?: string;
   after?: string;
 }
 
-export interface ListMessagesResult {
-  messages: MessageSummary[];
-}
-
+/** Parameters kept for the unsupported (bot-only) searchMessages surface. */
 export interface SearchMessagesParams {
-  /** Required — the text to search for (case-insensitive match on message content). */
+  /** Required — the text to search for. */
   query: string;
-  /** Optional — scope the search to a single guild's text channels. */
+  /** Optional — scope the search to a single guild. */
   guildId?: string;
   /** Optional — scope the search to specific channel ids. */
   channelIds?: string[];
-  /** Optional — messages to read per channel (clamped to 100 by listMessages). */
+  /** Optional — messages to read per channel. */
   limit?: number;
-}
-
-export interface SearchMessagesResult {
-  messages: MessageSummary[];
-  totalMatches: number;
-  searchedChannels: number;
 }
 
 // ──────────────────────────────────────────────
@@ -165,11 +95,14 @@ export interface SearchMessagesResult {
 // ──────────────────────────────────────────────
 
 /**
- * Discord guilds service.
- * Mirrors the GitHubService architecture: resolves the current user +
- * integration, delegates HTTP to DiscordClient (no direct fetch()), maps raw
- * payloads to typed shapes, logs activity asynchronously, and maps errors to
- * AppError (invalidating the token on 401).
+ * Discord service.
+ *
+ * Only the OAuth-supported capability is implemented: listing the user's
+ * servers via GET /users/@me/guilds (Bearers token + `guilds` scope).
+ * Channel/message reads are bot-only endpoints with no OAuth scope — those
+ * methods fail fast with the "Discord Bot Required" explanation instead of
+ * attempting requests that would 401, burn a token refresh, and falsely mark
+ * the healthy integration as needing reconnection.
  */
 export class DiscordService {
   /**
@@ -205,58 +138,6 @@ export class DiscordService {
       memberCount: raw.approximate_member_count ?? raw.member_count ?? null,
       features: raw.features ?? [],
       joinedAt: raw.joined_at ?? null,
-    };
-  }
-
-  static toChannelSummary(raw: RawChannel): ChannelSummary {
-    return {
-      id: raw.id ?? "",
-      guildId: raw.guild_id ?? "",
-      name: raw.name ?? "",
-      type: raw.type ?? 0,
-      position: raw.position ?? 0,
-      topic: raw.topic ?? null,
-      parentId: raw.parent_id ?? null,
-      nsfw: raw.nsfw ?? false,
-    };
-  }
-
-  static toMessageSummary(raw: RawMessage): MessageSummary {
-    const authorId = raw.author?.id ?? null;
-    const avatarHash = raw.author?.avatar ?? null;
-
-    // Avatar CDN URL: https://cdn.discordapp.com/avatars/{user_id}/{hash}.png
-    // (use .gif when the hash starts with "a_", which denotes an animated avatar)
-    let authorAvatar: string | null = null;
-    if (authorId && avatarHash) {
-      const ext = avatarHash.startsWith("a_") ? "gif" : "png";
-      authorAvatar = `https://cdn.discordapp.com/avatars/${authorId}/${avatarHash}.${ext}`;
-    }
-
-    return {
-      id: raw.id ?? "",
-      channelId: raw.channel_id ?? "",
-      authorId,
-      authorName: raw.author?.global_name ?? raw.author?.username ?? null,
-      authorAvatar,
-      content: raw.content ?? "",
-      timestamp: raw.timestamp ?? null,
-      editedTimestamp: raw.edited_timestamp ?? null,
-      attachments: (raw.attachments ?? []).map((a) => ({
-        id: a.id ?? "",
-        filename: a.filename ?? "",
-        url: a.url ?? "",
-      })),
-      embeds: (raw.embeds ?? []).map((e) => ({
-        title: e.title ?? null,
-        description: e.description ?? null,
-        url: e.url ?? null,
-      })),
-      pinned: raw.pinned ?? false,
-      mentions: (raw.mentions ?? []).map((m) => ({
-        id: m.id ?? "",
-        username: m.username ?? "",
-      })),
     };
   }
 
@@ -296,132 +177,50 @@ export class DiscordService {
 
   /**
    * List the message-bearing channels of a Discord guild.
-   * GET /guilds/{guildId}/channels — unsupported channel types are filtered out.
+   *
+   * GET /guilds/{guildId}/channels is a BOT-ONLY endpoint — Discord's OAuth
+   * API has no scope for it, so an OAuth user token always gets 401. Fail
+   * fast with the honest explanation instead of attempting the request
+   * (which would also burn a token refresh and falsely mark the healthy
+   * integration as needs_reconnect).
    */
-  static async listChannels(guildId: string): Promise<ListChannelsResult> {
-    logger.info("DiscordService: listChannels request received", logMeta({ guildId }));
-    const { client, integration } = await DiscordService.createClientForUser();
-    try {
-      const res = await client.get<RawChannel[]>(`/guilds/${encodeURIComponent(guildId)}/channels`);
-
-      const channels = (Array.isArray(res.data) ? res.data : [])
-        .filter((c) => SUPPORTED_CHANNEL_TYPES.has(c.type ?? -1))
-        .map((c) => DiscordService.toChannelSummary(c));
-
-      logger.info("DiscordService: channels returned", logMeta({ guildId, count: channels.length }));
-      // Log activity asynchronously — never block the response
-      logActivity({
-        userId: integration.userId,
-        platform: PLATFORM,
-        action: "Viewed Discord Channels",
-        details: `Viewed ${channels.length} channels in guild ${guildId}`,
-        integrationId: integration.id,
-      }).catch((e) => logger.debug("logActivity failed", logMeta({ error: String(e) })));
-
-      return { channels };
-    } catch (err) {
-      logger.error("DiscordService: listChannels failed", logMeta({ guildId, error: String(err) }));
-      return DiscordService.handleError(err, integration.id);
-    }
+  static async listChannels(guildId: string): Promise<never> {
+    logger.info("DiscordService: listChannels blocked — requires a Discord bot", logMeta({ guildId }));
+    return DiscordService.unsupported();
   }
 
   /**
    * List messages from a Discord channel.
-   * GET /channels/{channelId}/messages — supports optional limit/before/after.
+   *
+   * GET /channels/{channelId}/messages is a BOT-ONLY endpoint — same OAuth
+   * limitation as listChannels. Fail fast with the honest explanation.
    */
-  static async listMessages(channelId: string, params: ListMessagesParams = {}): Promise<ListMessagesResult> {
-    logger.info("DiscordService: listMessages request received", logMeta({ channelId, params }));
-    const { client, integration } = await DiscordService.createClientForUser();
-    try {
-      // Discord rejects limit > 100 with 400 — clamp defensively (mirrors the
-      // GitHub validator's perPage max(100) cap). Undefined falls back to Discord's default.
-      const limit = params.limit ? Math.min(params.limit, 100) : undefined;
-      const res = await client.get<RawMessage[]>(`/channels/${encodeURIComponent(channelId)}/messages`, {
-        query: {
-          limit,
-          before: params.before,
-          after: params.after,
-        },
-      });
-
-      const messages = (Array.isArray(res.data) ? res.data : []).map((m) => DiscordService.toMessageSummary(m));
-
-      logger.info("DiscordService: messages returned", logMeta({ channelId, count: messages.length }));
-      // Log activity asynchronously — never block the response
-      logActivity({
-        userId: integration.userId,
-        platform: PLATFORM,
-        action: "Viewed Discord Messages",
-        details: `Viewed ${messages.length} messages in channel ${channelId}`,
-        integrationId: integration.id,
-      }).catch((e) => logger.debug("logActivity failed", logMeta({ error: String(e) })));
-
-      return { messages };
-    } catch (err) {
-      logger.error("DiscordService: listMessages failed", logMeta({ channelId, error: String(err) }));
-      return DiscordService.handleError(err, integration.id);
-    }
+  static async listMessages(channelId: string, params: ListMessagesParams = {}): Promise<never> {
+    logger.info("DiscordService: listMessages blocked — requires a Discord bot", logMeta({ channelId, params }));
+    return DiscordService.unsupported();
   }
 
   /**
-   * Search Discord messages across accessible text channels.
+   * Search Discord messages across channels.
    *
-   * Discord has no native global message-search API for OAuth applications, so
-   * this reads messages from the resolved channels via listMessages() and
-   * filters them locally with a case-insensitive content match.
-   *
-   * Channel resolution priority: explicit channelIds > guildId > all accessible
-   * text channels (listGuilds + listChannels per guild).
+   * Same bot-only limitation as listMessages — Discord has no OAuth-scoped
+   * message search. Fail fast with the honest explanation.
    */
-  static async searchMessages(params: SearchMessagesParams): Promise<SearchMessagesResult> {
-    logger.info("DiscordService: searchMessages request received", logMeta({ params }));
-    // Fail fast on an empty query before resolving the user + integration (DB work)
-    const q = params.query.trim().toLowerCase();
-    if (!q) throw new AppError("Search query is required", 400, "bad_request");
+  static async searchMessages(params: SearchMessagesParams): Promise<never> {
+    logger.info("DiscordService: searchMessages blocked — requires a Discord bot", logMeta({ params }));
+    return DiscordService.unsupported();
+  }
 
-    const { integration } = await DiscordService.createClientForUser();
-    try {
-
-      // Resolve the channels to search across (dedupe caller-supplied ids)
-      let channelIds = Array.from(new Set(params.channelIds ?? []));
-      if (channelIds.length === 0) {
-        if (params.guildId) {
-          const channels = await DiscordService.listChannels(params.guildId);
-          channelIds = channels.channels.map((c) => c.id);
-        } else {
-          const guilds = await DiscordService.listGuilds();
-          for (const guild of guilds.guilds) {
-            const channels = await DiscordService.listChannels(guild.id);
-            channelIds.push(...channels.channels.map((c) => c.id));
-          }
-        }
-      }
-
-      // Read messages per channel — listMessages() owns the limit clamp (max 100)
-      // and falls back to Discord's default when limit is undefined.
-      const matches: MessageSummary[] = [];
-      for (const channelId of channelIds) {
-        const { messages } = await DiscordService.listMessages(channelId, { limit: params.limit });
-        for (const m of messages) {
-          if (m.content.toLowerCase().includes(q)) matches.push(m);
-        }
-      }
-
-      logger.info("DiscordService: search completed", logMeta({ matches: matches.length, searchedChannels: channelIds.length }));
-      // Log activity asynchronously — never block the response
-      logActivity({
-        userId: integration.userId,
-        platform: PLATFORM,
-        action: "Searched Discord Messages",
-        details: `Searched for "${params.query}" across ${channelIds.length} channels`,
-        integrationId: integration.id,
-      }).catch((e) => logger.debug("logActivity failed", logMeta({ error: String(e) })));
-
-      return { messages: matches, totalMatches: matches.length, searchedChannels: channelIds.length };
-    } catch (err) {
-      logger.error("DiscordService: searchMessages failed", logMeta({ error: String(err) }));
-      return DiscordService.handleError(err, integration.id);
-    }
+  /**
+   * Throw the canned "Discord Bot Required" explanation.
+   *
+   * HTTP 200 is intentional: this is an informational limitation of the OAuth
+   * connection, not a failure of the request — the client must receive the
+   * explanation without treating it as an error (and without the 401 path
+   * that would refresh tokens / mark the integration needs_reconnect).
+   */
+  private static unsupported(): never {
+    throw new AppError(DISCORD_BOT_REQUIRED_MESSAGE, 200, DISCORD_BOT_REQUIRED_CODE);
   }
 
   // ── Error handling ─────────────────────────

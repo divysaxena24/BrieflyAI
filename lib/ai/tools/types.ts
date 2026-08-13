@@ -13,6 +13,8 @@
  *   API layer — they are never encoded as `success: false` results.
  */
 
+import type { Tool } from "@/lib/tools/types";
+
 /** The six integration families the AI tools operate on. */
 export type IntegrationName = "gmail" | "calendar" | "drive" | "github" | "discord" | "telegram";
 
@@ -28,6 +30,29 @@ export interface AIToolSource {
   title?: string;
   /** Direct URL to the item, when the service provides one. */
   url?: string;
+}
+
+/**
+ * A tool that answers with a canned explanation instead of executing real
+ * work (e.g. a feature that is not available with the current integration
+ * auth, like reading Discord channels/messages over OAuth).
+ *
+ * The orchestrator short-circuits these tools: it returns `informational`
+ * verbatim (HTTP 200) without executing the tool or calling the LLM, so the
+ * user always receives the exact explanation.
+ */
+export interface InformationalTool extends Tool {
+  readonly informational: {
+    /** Short human title, e.g. "Discord Bot Required". */
+    readonly title: string;
+    /** The full explanation returned to the user. */
+    readonly message: string;
+  };
+}
+
+/** Type guard: whether `tool` answers with a canned informational message. */
+export function isInformationalTool(tool: Tool): tool is InformationalTool {
+  return "informational" in tool && typeof tool.informational === "object" && tool.informational !== null;
 }
 
 /** The normalized successful result of an AI tool execution. */

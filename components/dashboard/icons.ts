@@ -6,9 +6,7 @@
 import {
   LayoutDashboard,
   Bot,
-  FileText,
   Blocks,
-  Bell,
   Settings,
   Zap,
   Sparkles,
@@ -43,11 +41,11 @@ import {
   Lock,
   Plug,
   Layers,
-  BarChart3,
   ListChecks,
   Network,
   Cpu,
   Globe,
+  LayoutGrid,
 } from "lucide-react";
 
 // Try importing Hugeicons React icons dynamically/safely
@@ -55,11 +53,11 @@ let HugeIcons: any = {};
 try {
   // @ts-ignore
   HugeIcons = require("@hugeicons/react");
-} catch (e) {
+} catch {
   try {
     // @ts-ignore
     HugeIcons = require("hugeicons-react");
-  } catch (err) {
+  } catch {
     HugeIcons = {};
   }
 }
@@ -77,9 +75,8 @@ function resolveIcon(hugeIconNames: string[], lucideFallback: any) {
 // Navigation & Dashboard Icons (Hugeicons first, Lucide fallback)
 export const DashboardIcon = resolveIcon(["DashboardSquare01Icon", "Dashboard01Icon", "DashboardSquare02Icon", "Layout01Icon"], LayoutDashboard);
 export const AiAgentIcon = resolveIcon(["BotIcon", "AiBrain01Icon", "ArtificialIntelligence01Icon", "SmartPhone01Icon"], Bot);
-export const BriefingsIcon = resolveIcon(["FileText01Icon", "News01Icon", "Task01Icon", "Invoice01Icon"], FileText);
+export const FeaturesIcon = resolveIcon(["Grid02Icon", "BlocksIcon", "Grid01Icon"], LayoutGrid);
 export const IntegrationsIcon = resolveIcon(["ApiIcon", "PluginsIcon", "Grid01Icon", "Software01Icon"], Blocks);
-export const AlertsIcon = resolveIcon(["Notification01Icon", "Bell01Icon", "Alert01Icon"], Bell);
 export const SettingsIcon = resolveIcon(["Settings01Icon", "Settings02Icon", "Sliders01Icon"], Settings);
 
 // Feature & Action Icons
@@ -125,7 +122,6 @@ export const InfoIcon = Info;
 
 // Overview dashboard utility icons
 export const LayersIcon = resolveIcon(["LayersIcon", "StackIcon"], Layers);
-export const BarChart3Icon = resolveIcon(["BarChartIcon", "ChartIcon"], BarChart3);
 export const ListChecksIcon = resolveIcon(["ListCheckIcon", "CheckListIcon"], ListChecks);
 export const NetworkIcon = resolveIcon(["NetworkIcon", "NodesIcon"], Network);
 export const CpuIcon = resolveIcon(["CpuIcon", "ProcessorIcon"], Cpu);

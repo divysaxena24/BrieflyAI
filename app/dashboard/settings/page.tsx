@@ -1,6 +1,6 @@
 import React from "react";
 import { PageHeader } from "@/components/dashboard";
-import { SettingsIcon, GmailMailIcon } from "@/components/dashboard/icons";
+
 
 export default function SettingsPage() {
   return (

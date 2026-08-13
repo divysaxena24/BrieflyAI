@@ -63,12 +63,10 @@ const TOOL_INSTRUCTIONS: Record<string, string> = {
     "Summarize recent repository activity from the events: pushes, pull requests, and issues. Describe what happened and by whom. Only use the provided events.",
   "github.openIssuesSummary":
     "Summarize the open issues: group them by theme/labels where the data supports it, note the most recently updated or recurring problems, and highlight unresolved issues that look important.",
-  "discord.channelSummary":
-    "Summarize the discussion in the Discord channel: main topics, notable exchanges, and any questions left unanswered. Only use the provided messages.",
-  "discord.recentMessages":
-    "Present the recent Discord messages in a readable digest (who said what, when). Highlight anything notable.",
-  "discord.extractActionItems":
-    "Extract action items from the messages. For each: the action, the responsible person ONLY if explicitly mentioned in a message, the deadline ONLY if explicitly stated, and a source reference. Never invent an owner or deadline.",
+  "discord.listGuilds":
+    "List the user's Discord servers from the provided guild data: name, member count, and owner status. If the list is empty, say so. Never invent servers.",
+  "discord.botRequired":
+    "Explain that reading Discord channels and messages requires a Discord Bot that BrieflyAI does not yet have. Present the explanation exactly as provided in the tool data — do not invent capabilities.",
   "telegram.chatSummary":
     "Summarize the Telegram chat: the main discussion topics and anything important shared. Only use the provided messages.",
   "telegram.recentMessages":

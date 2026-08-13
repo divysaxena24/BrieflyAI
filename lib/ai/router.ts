@@ -121,16 +121,42 @@ export function routeQuery(query: string): ToolRoute | null {
   }
 
   // ── Discord ─────────────────────────────────────────
-  if (has(q, "discord")) {
-    if (has(q, "action item") || has(q, "action items") || has(q, "todo")) {
-      return { toolId: "discord.extractActionItems", input: {} };
+  // Discord's OAuth connection can only list the user's servers (guilds).
+  // Reading channels/messages is bot-only, so those requests are answered
+  // with the canned "Discord Bot Required" explanation instead of an
+  // unsupported tool call (which would 401 + trigger a false reconnect).
+  const isChannelMention = /#[a-z0-9_-]+/.test(q);
+  const isDiscordContext =
+    has(q, "discord") || isChannelMention || has(q, "server") || has(q, "guild");
+  if (isDiscordContext) {
+    // Channel/message reads are bot-only — answer with the canned explanation
+    // (word-boundary matching so e.g. "ready"/"/recently" don't misfire).
+    const wantsMessages =
+      isChannelMention ||
+      has(
+        q,
+        "message",
+        "messages",
+        "channel",
+        "channels",
+        "conversation",
+        "conversations",
+        "action item",
+        "action items",
+        "todo",
+        "unread",
+        "what happened",
+      ) ||
+      /\b(read|recent|activity|chat|chats)\b/.test(q);
+    if (wantsMessages) {
+      return { toolId: "discord.botRequired", input: {} };
     }
-    if (has(q, "summary") || has(q, "summarize") || has(q, "what happened")) {
-      return { toolId: "discord.channelSummary", input: {} };
+    // Supported: the user's Discord server (guild) list.
+    if (has(q, "server", "servers", "guild", "guilds", "joined", "am i in", "member", "which", "summary", "summarize")) {
+      return { toolId: "discord.listGuilds", input: {} };
     }
-    if (has(q, "message") || has(q, "recent") || has(q, "activity")) {
-      return { toolId: "discord.recentMessages", input: {} };
-    }
+    // A bare Discord mention with no clear channel intent — list the servers.
+    return { toolId: "discord.listGuilds", input: {} };
   }
 
   // ── Telegram ────────────────────────────────────────

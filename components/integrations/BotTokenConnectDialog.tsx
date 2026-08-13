@@ -88,14 +88,14 @@ const BotTokenConnectDialogInner: React.FC<BotTokenConnectDialogInnerProps> = ({
       />
 
       {/* Dialog card */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="relative w-full max-w-md max-h-[85vh] flex flex-col min-h-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
         {/* Accent bar */}
         <div
           className="absolute inset-x-0 top-0 h-1"
           style={{ backgroundColor: integration.accentColor }}
         />
 
-        <div className="p-6">
+        <div className="p-6 flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div className="mb-5 flex items-center gap-3">
             <div
@@ -118,7 +118,7 @@ const BotTokenConnectDialogInner: React.FC<BotTokenConnectDialogInnerProps> = ({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
             <div>
               <label
                 htmlFor="bot-token"
@@ -157,8 +157,17 @@ const BotTokenConnectDialogInner: React.FC<BotTokenConnectDialogInnerProps> = ({
               )}
             </div>
 
-            {/* In-app guide — only for Telegram (the first bot-token platform) */}
-            {platformId === "telegram" && <TelegramTokenGuide />}
+            {/* Guide container — the guide itself is the scroll container. */}
+            <div className="flex-1 min-h-0 overflow-x-hidden">
+              <div className="space-y-4 min-h-0">
+                {/* In-app guide — only for Telegram (the first bot-token platform) */}
+                {platformId === "telegram" && (
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    <TelegramTokenGuide />
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-1">

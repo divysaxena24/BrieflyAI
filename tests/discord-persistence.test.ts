@@ -17,7 +17,10 @@
  *      status is not flipped to not-connected just because the access token
  *      expired.
  *   4. The AI Discord tools resolve the persisted integration and return real
- *      messages after a refresh (no stale in-memory state involved).
+ *      data after a refresh (no stale in-memory state involved). Channel /
+ *      message reads are bot-only endpoints, so they are answered with the
+ *      canned "Discord Bot Required" explanation — never a 401, never a
+ *      refresh, and never a needs_reconnect status change.
  *
  * No real Discord/Groq calls are made — Discord endpoints and the DB are
  * mocked.
@@ -26,7 +29,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Mock } from "vitest";
 import { DiscordProvider } from "@/lib/services/integrations/discordProvider";
 import { DiscordClient } from "@/lib/services/discord/discordClient";
-import { DiscordRecentMessagesTool } from "@/lib/ai/tools/discordTools";
+import DiscordService from "@/lib/services/discord/discordService";
+import { DiscordListGuildsTool, DiscordBotRequiredTool } from "@/lib/ai/tools/discordTools";
 import { GET as discordCallbackGET } from "@/app/api/integrations/discord-callback/route";
 
 // ──────────────────────────────────────────────
@@ -352,7 +356,7 @@ describe("Discord AI tools work after a page refresh", () => {
     ];
   });
 
-  it("resolves the persisted integration and returns real messages via the real service", async () => {
+  it("lists the user's Discord servers via the real service (OAuth-supported endpoint)", async () => {
     const getSpy = vi.spyOn(DiscordClient.prototype, "get").mockImplementation(async (path: string) => {
       if (path === "/users/@me/guilds") {
         return {
@@ -364,51 +368,19 @@ describe("Discord AI tools work after a page refresh", () => {
           rateLimit: { limit: null, remaining: null, resetAt: null },
         };
       }
-      if (path.startsWith("/guilds/g1/channels")) {
-        return {
-          data: [{ id: "c1", guild_id: "g1", name: "general", type: 0, position: 0, topic: null, parent_id: null, nsfw: false }],
-          status: 200,
-          headers: new Headers(),
-          rateLimit: { limit: null, remaining: null, resetAt: null },
-        };
-      }
-      if (path.startsWith("/channels/c1/messages")) {
-        return {
-          data: [
-            {
-              id: "m1",
-              channel_id: "c1",
-              author: { id: "a1", username: "alice" },
-              content: "Ship the fix",
-              timestamp: "2026-08-10T00:00:00Z",
-              edited_timestamp: null,
-              attachments: [],
-              embeds: [],
-              pinned: false,
-              mentions: [],
-            },
-          ],
-          status: 200,
-          headers: new Headers(),
-          rateLimit: { limit: null, remaining: null, resetAt: null },
-        };
-      }
       throw new Error(`unexpected Discord path: ${path}`);
     });
 
     try {
       // Real tool → real DiscordService → DiscordClient (spied transport).
-      const tool = new DiscordRecentMessagesTool();
-      const result = await tool.execute({ limit: 10 });
+      const tool = new DiscordListGuildsTool();
+      const result = await tool.execute();
 
       expect(result.success).toBe(true);
-      expect(result.tool).toBe("discord.recentMessages");
+      expect(result.tool).toBe("discord.listGuilds");
       expect(result.data).toMatchObject({ count: 1 });
-      expect((result.data as { messages: Array<{ content: string; authorName: string }> }).messages[0]).toMatchObject({
-        content: "Ship the fix",
-        authorName: "alice",
-      });
-      expect(result.sources[0]).toMatchObject({ integration: "discord", type: "message" });
+      expect((result.data as { guilds: Array<{ name: string }> }).guilds[0]).toMatchObject({ name: "Acme" });
+      expect(result.sources[0]).toMatchObject({ integration: "discord", type: "guild" });
       // The integration was re-resolved from the persisted DB row, not from
       // any in-memory connection state.
       expect(h.queries.getUserIntegrationByPlatform).toHaveBeenCalledWith("user-1", "discord");
@@ -417,11 +389,51 @@ describe("Discord AI tools work after a page refresh", () => {
     }
   });
 
+  it("answers channel/message requests with the canned bot-required explanation — no API call, no reconnect state", async () => {
+    const getSpy = vi.spyOn(DiscordClient.prototype, "get");
+    try {
+      const tool = new DiscordBotRequiredTool();
+      const result = await tool.execute();
+
+      expect(result.success).toBe(true);
+      expect(result.tool).toBe("discord.botRequired");
+      expect(result.data.message).toContain("requires installing a Discord Bot");
+      expect(getSpy).not.toHaveBeenCalled();
+      // The healthy integration is never marked needs_reconnect.
+      expect(h.queries.updateIntegrationStatus).not.toHaveBeenCalled();
+    } finally {
+      getSpy.mockRestore();
+    }
+  });
+
+  it("blocks bot-only service calls with discord_bot_required — no API call, no refresh, no needs_reconnect", async () => {
+    const getSpy = vi.spyOn(DiscordClient.prototype, "get");
+    try {
+      await expect(DiscordService.listChannels("g1")).rejects.toMatchObject({
+        code: "discord_bot_required",
+        status: 200,
+      });
+      await expect(DiscordService.listMessages("c1")).rejects.toMatchObject({
+        code: "discord_bot_required",
+        status: 200,
+      });
+      await expect(DiscordService.searchMessages({ query: "x" })).rejects.toMatchObject({
+        code: "discord_bot_required",
+        status: 200,
+      });
+      // No Discord API transport call and no integration status change.
+      expect(getSpy).not.toHaveBeenCalled();
+      expect(h.queries.updateIntegrationStatus).not.toHaveBeenCalled();
+    } finally {
+      getSpy.mockRestore();
+    }
+  });
+
   it("surfaces a clean reconnect error instead of fake data when the integration is gone", async () => {
     (h.queries.getUserIntegrationByPlatform as Mock).mockResolvedValue(null);
 
-    const tool = new DiscordRecentMessagesTool();
-    await expect(tool.execute({ limit: 10 })).rejects.toMatchObject({
+    const tool = new DiscordListGuildsTool();
+    await expect(tool.execute()).rejects.toMatchObject({
       code: "discord_not_connected",
       status: 404,
     });

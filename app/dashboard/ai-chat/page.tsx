@@ -94,9 +94,8 @@ function toolLabel(toolId: string): string {
     "github.repositorySummary": "Repository summary",
     "github.recentActivity": "Repository activity",
     "github.openIssuesSummary": "Open issues",
-    "discord.channelSummary": "Channel summary",
-    "discord.recentMessages": "Recent messages",
-    "discord.extractActionItems": "Action items",
+    "discord.listGuilds": "Discord servers",
+    "discord.botRequired": "Discord bot required",
     "telegram.chatSummary": "Chat summary",
     "telegram.recentMessages": "Recent messages",
     "telegram.newsDigest": "News digest",
@@ -111,8 +110,8 @@ const SUGGESTIONS = [
   "Prepare me for my next meeting",
   "Find my recent Drive files",
   "What are the important open GitHub issues?",
-  "What happened in my Discord channels today?",
-  "Extract action items from Discord",
+  "Which Discord servers am I in?",
+  "Summarize my Discord servers",
   "Summarize my Telegram updates",
 ];
 
@@ -130,6 +129,14 @@ export default function AiChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  // Pre-fill the input from ?q=… (e.g. the Features page "Try Now" links),
+  // so the user can review and send the suggested prompt.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q")?.trim();
+    if (q) setInput(q);
+  }, []);
 
   const send = async (text?: string) => {
     const query = (text ?? input).trim();
@@ -321,6 +328,28 @@ function ChatBubble({ message }: { message: ChatMessage }) {
               Reconnect integrations
             </Link>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // Discord channel/message requests are answered with the canned
+  // "Discord Bot Required" explanation — show it as a friendly info card
+  // (the integration itself is healthy, so no reconnect prompt is shown).
+  if (message.tool === "discord.botRequired") {
+    return (
+      <div className="flex justify-start">
+        <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-sky-200 bg-sky-50/80 px-4 py-3.5 text-sm text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
+          <p className="font-bold">Discord Bot Required</p>
+          <p className="mt-1.5 text-xs leading-relaxed">{message.content}</p>
+          <p className="mt-3 text-xs font-semibold">BrieflyAI currently supports:</p>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            <li>✓ Listing your Discord servers</li>
+            <li>✓ Server summaries</li>
+          </ul>
+          <p className="mt-2 text-[11px] text-sky-700/80 dark:text-sky-300/80">
+            Reading messages requires the BrieflyAI Discord Bot, which is not yet available.
+          </p>
         </div>
       </div>
     );

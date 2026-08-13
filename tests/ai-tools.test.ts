@@ -18,9 +18,8 @@ import {
   GitHubRepositorySummaryTool,
   GitHubRecentActivityTool,
   GitHubOpenIssuesSummaryTool,
-  DiscordChannelSummaryTool,
-  DiscordRecentMessagesTool,
-  DiscordExtractActionItemsTool,
+  DiscordListGuildsTool,
+  DiscordBotRequiredTool,
   TelegramChatSummaryTool,
   TelegramRecentMessagesTool,
   TelegramNewsDigestTool,
@@ -32,7 +31,6 @@ import type { MessageSummary, ThreadDetail } from "@/lib/services/gmail/types";
 import type { EventDetail, EventSummary } from "@/lib/services/calendar/types";
 import type { DriveFile } from "@/lib/services/drive/types";
 import type { RepositoryDetail, RepositorySummary } from "@/lib/services/github";
-import type { MessageSummary as DiscordMessage } from "@/lib/services/discord/discordService";
 import type { MessageSummary as TelegramMessage } from "@/lib/services/telegram/telegramService";
 
 // ──────────────────────────────────────────────
@@ -133,24 +131,6 @@ function makeRepoSummary(overrides: Partial<RepositorySummary> = {}): Repository
   };
 }
 
-function makeDiscordMessage(overrides: Partial<DiscordMessage> = {}): DiscordMessage {
-  return {
-    id: "d-1",
-    channelId: "channel-1",
-    authorId: "author-1",
-    authorName: "Alice",
-    authorAvatar: null,
-    content: "Let's ship the new landing page this week.",
-    timestamp: "2026-08-10T09:00:00Z",
-    editedTimestamp: null,
-    attachments: [],
-    embeds: [],
-    pinned: false,
-    mentions: [],
-    ...overrides,
-  };
-}
-
 function makeTelegramMessage(overrides: Partial<TelegramMessage> = {}): TelegramMessage {
   return {
     id: 1,
@@ -226,8 +206,6 @@ function makeGithubService(overrides: Record<string, unknown> = {}) {
 function makeDiscordService(overrides: Record<string, unknown> = {}) {
   return {
     listGuilds: vi.fn(async () => ({ guilds: [{ id: "guild-1", name: "Acme", icon: null, owner: false, permissions: "", memberCount: null, features: [], joinedAt: null }], pagination: { hasMore: false } })),
-    listChannels: vi.fn(async () => ({ channels: [{ id: "channel-1", guildId: "guild-1", name: "general", type: 0, position: 0, topic: null, parentId: null, nsfw: false }] })),
-    listMessages: vi.fn(async () => ({ messages: [makeDiscordMessage()] })),
     ...overrides,
   };
 }
@@ -245,16 +223,16 @@ function makeTelegramService(overrides: Record<string, unknown> = {}) {
 // ──────────────────────────────────────────────
 
 describe("AI tool registration", () => {
-  it("creates the full tool set (21 tools) with unique ids in the declared order", () => {
+  it("creates the full tool set (20 tools) with unique ids in the declared order", () => {
     const tools = createAITools();
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(20);
     expect(tools.map((tool) => tool.id)).toEqual([...AI_TOOL_IDS]);
-    expect(new Set(tools.map((tool) => tool.id)).size).toBe(21);
+    expect(new Set(tools.map((tool) => tool.id)).size).toBe(20);
   });
 
   it("builds a registry from the factory without duplicates", () => {
     const registry = createAIToolRegistry();
-    expect(registry.list()).toHaveLength(21);
+    expect(registry.list()).toHaveLength(20);
     expect(registry.get("gmail.summarizeInbox")).toBeDefined();
     expect(registry.get("telegram.newsDigest")).toBeDefined();
   });
@@ -273,7 +251,9 @@ describe("AI tool registration", () => {
     expect(ids.filter((id) => id.startsWith("calendar."))).toHaveLength(4);
     expect(ids.filter((id) => id.startsWith("drive."))).toHaveLength(3);
     expect(ids.filter((id) => id.startsWith("github."))).toHaveLength(3);
-    expect(ids.filter((id) => id.startsWith("discord."))).toHaveLength(3);
+    // Discord: only the OAuth-supported guild list + the canned bot-required
+    // explanation (channel/message tools were removed — they need a bot).
+    expect(ids.filter((id) => id.startsWith("discord."))).toHaveLength(2);
     expect(ids.filter((id) => id.startsWith("telegram."))).toHaveLength(3);
   });
 });
@@ -583,34 +563,36 @@ describe("GitHub tools", () => {
 // ──────────────────────────────────────────────
 
 describe("Discord tools", () => {
-  it("resolves the first guild + channel and returns messages", async () => {
+  it("lists the user's Discord servers via the OAuth-supported guilds endpoint", async () => {
     const service = makeDiscordService();
-    const result = await new DiscordChannelSummaryTool(service).execute({});
-    expect(service.listGuilds).toHaveBeenCalled();
-    expect(service.listChannels).toHaveBeenCalledWith("guild-1");
-    expect(service.listMessages).toHaveBeenCalledWith("channel-1", { limit: 50 });
-    expect(result.data.channel).toMatchObject({ id: "channel-1", name: "general" });
-    expect(result.data.messages[0]).toMatchObject({ authorName: "Alice" });
+    const result = await new DiscordListGuildsTool(service).execute();
+    expect(service.listGuilds).toHaveBeenCalledTimes(1);
+    expect(result.data.guilds[0]).toMatchObject({ id: "guild-1", name: "Acme" });
+    expect(result.sources[0]).toMatchObject({ integration: "discord", type: "guild" });
   });
 
-  it("honors explicit guild/channel ids", async () => {
-    const service = makeDiscordService();
-    await new DiscordRecentMessagesTool(service).execute({ guildId: "g-9", channelId: "c-9", limit: 10 });
-    expect(service.listChannels).not.toHaveBeenCalled();
-    expect(service.listMessages).toHaveBeenCalledWith("c-9", { limit: 10 });
-  });
-
-  it("clamps the message limit to 100", async () => {
-    const service = makeDiscordService();
-    const tool = new DiscordChannelSummaryTool(service);
-    expect(tool.inputSchema.safeParse({ limit: 200 }).success).toBe(false);
-  });
-
-  it("fails honestly when the user has no Discord servers", async () => {
+  it("is honest when the user has no Discord servers", async () => {
     const service = makeDiscordService({ listGuilds: vi.fn(async () => ({ guilds: [], pagination: { hasMore: false } })) });
-    await expect(new DiscordExtractActionItemsTool(service).execute({})).rejects.toMatchObject({
-      code: "no_discord_guilds",
-    });
+    const result = await new DiscordListGuildsTool(service).execute();
+    expect(result.data.count).toBe(0);
+    expect(result.data.guilds).toEqual([]);
+  });
+
+  it("never calls the Discord API for the bot-required explanation", async () => {
+    const service = makeDiscordService();
+    const tool = new DiscordBotRequiredTool(service);
+    const result = await tool.execute();
+    // Canned explanation only — no listGuilds (or any other API) call.
+    expect(service.listGuilds).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.data.message).toContain("requires installing a Discord Bot");
+    expect(result.sources).toEqual([]);
+  });
+
+  it("marks the bot-required tool as informational for the orchestrator", () => {
+    const tool = new DiscordBotRequiredTool();
+    expect(tool.informational.title).toBe("Discord Bot Required");
+    expect(tool.informational.message.length).toBeGreaterThan(0);
   });
 });
 

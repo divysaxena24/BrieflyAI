@@ -29,6 +29,7 @@ import { AIToolPlanner } from "./planner";
 import { buildToolInstruction } from "./prompts";
 import { sanitizeForLLM } from "./sanitize";
 import { createAIToolRegistry, type AIToolSource, type AIToolResult } from "./tools";
+import { isInformationalTool } from "./tools/types";
 
 /** Input accepted by {@link AIOrchestrator.handle}. */
 export interface AIRequestInput {
@@ -97,6 +98,24 @@ export class AIOrchestrator {
       availableToolIds: this.registry.list().map((tool) => tool.id),
     };
     const plan = await this.planner.plan(context);
+
+    // 1b) Informational tools (e.g. discord.botRequired) answer with a canned
+    // explanation — return it verbatim (HTTP 200) without executing the tool
+    // or calling Groq, so the user always gets the exact message and no
+    // unsupported API call is attempted.
+    const plannedStep = plan.steps[0];
+    const plannedTool = plannedStep ? this.registry.get(plannedStep.toolId) : undefined;
+    if (plannedTool && isInformationalTool(plannedTool)) {
+      return {
+        success: true,
+        tool: plannedTool.id,
+        data: { title: plannedTool.informational.title, message: plannedTool.informational.message },
+        sources: [],
+        response: plannedTool.informational.message,
+        note: plannedTool.informational.title,
+        generatedAt: new Date().toISOString(),
+      };
+    }
 
     // 2) Execute the single-step plan.
     const execution = await new ToolExecutor(this.registry).execute(plan);
