@@ -6,7 +6,7 @@ interface HighlightTextProps {
   text: string;
   query: string;
   className?: string;
-  tag?: keyof JSX.IntrinsicElements;
+  tag?: React.ElementType;
 }
 
 export const HighlightText: React.FC<HighlightTextProps> = ({ text, query, className, tag = "span" }) => {

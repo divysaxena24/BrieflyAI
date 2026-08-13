@@ -72,7 +72,7 @@ export default function FeaturesPage() {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
   }, [expandedIds]);
 
-  const filteredCatalog: IntegrationFeatureGroup[] = useMemo(() => {
+  const filteredCatalog: readonly IntegrationFeatureGroup[] = useMemo(() => {
     const q = query.trim().toLowerCase();
     let result = featureCatalog;
 
