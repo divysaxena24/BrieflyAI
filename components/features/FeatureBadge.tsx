@@ -37,13 +37,12 @@ interface FeatureBadgeProps {
   status: FeatureStatus;
 }
 
-/** Small pill showing a feature's availability status with a consistent color. */
 export const FeatureBadge: React.FC<FeatureBadgeProps> = ({ status }) => {
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${config.classes}`}>
-      <Icon size={11} className="h-3 w-3" />
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.classes}`}>
+      <Icon size={10} className="h-2.5 w-2.5" />
       {config.label}
     </span>
   );

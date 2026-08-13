@@ -9,7 +9,6 @@ import { AiSparklesIcon } from "@/components/dashboard/icons";
 import { IntegrationGridSkeleton } from "@/components/integrations";
 import { useIntegrationStatus } from "@/lib/integrations/store";
 
-// Dynamic import with ssr:false to prevent Framer Motion hydration mismatches
 const IntegrationOverview = dynamic(
   () =>
     import("@/components/integrations").then((mod) => mod.IntegrationOverview),
@@ -22,7 +21,6 @@ const IntegrationOverview = dynamic(
 export default function IntegrationsPage() {
   const { platforms, isLoading } = useIntegrationStatus();
 
-  // Fetch real recent activity from the server
   const [activities, setActivities] = useState<any[] | undefined>(undefined);
   useEffect(() => {
     fetch("/api/activity")
@@ -42,18 +40,20 @@ export default function IntegrationsPage() {
   return (
     <div>
       <PageHeader
-        title="Integrations & Platforms"
-        description="Connect your workspace apps to let BrieflyAI synthesize your communication streams."
-        badge={`${connectedCount} Active`}
+        title="Integrations"
+        description="Connect and manage every data source powering BrieflyAI."
+        badge={`${connectedCount} / ${platforms.length} Connected`}
         action={
           <span className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-3.5 py-2 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
             <AiSparklesIcon size={14} className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400" />
             {platforms.length} platforms available
           </span>
         }
+        aiReady={connectedCount >= 2}
+        lastSync="2 min ago"
+        platformsAvailable={connectedCount}
       />
 
-      {/* ─── Integration Overview Dashboard (client-only to avoid Framer Motion hydration issues) ─── */}
       <IntegrationOverview
         platforms={isLoading ? integrationPlatforms : platforms}
         activities={activities}

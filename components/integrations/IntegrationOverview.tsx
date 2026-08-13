@@ -21,6 +21,9 @@ import {
   AiSparklesIcon,
   ArrowRightIcon,
 } from "@/components/dashboard/icons";
+import { QuickStats } from "./QuickStats";
+import { AiReadinessIndicator } from "./AiReadinessIndicator";
+import { PlatformHealth } from "./PlatformHealth";
 
 // ──────────────────────────────────────────────
 //  Compute derived stats from platform config
@@ -44,7 +47,6 @@ function computeOverviewStats(platforms: IntegrationConfig[]) {
     (p) => p.status === "error"
   ).length;
 
-  // Total MCP tools across connected platforms
   let totalMcpTools = 0;
   const mcpBreakdown: { id: string; name: string; count: number }[] = [];
   for (const platform of platforms) {
@@ -55,7 +57,6 @@ function computeOverviewStats(platforms: IntegrationConfig[]) {
     }
   }
 
-  // AI Readiness: need at least 2 connected platforms with data sources
   const connectedPlatforms = platforms.filter(
     (p) => p.status === "connected"
   );
@@ -134,147 +135,100 @@ export const IntegrationOverview: React.FC<IntegrationOverviewProps> = ({
   }
 
   return (
-    <section className="mb-8">
-      {/* ─── 6-Card Overview Grid ─── */}
-      <StatsGrid>
-        {/* 1. Connected Platforms */}
-        <ProgressCard
-          icon={PlatformLinkIcon}
-          title="Connected Platforms"
-          stat={`${stats.connected} / ${stats.total} Connected`}
-          description={`${stats.notConnected} platforms not yet connected`}
-          gradient=""
-          iconBg="bg-brand-50 dark:bg-brand-950/40"
-          iconColor="text-brand-600 dark:text-brand-400"
-          progress={stats.connectedPercent}
-          progressColor="bg-brand-500"
-          progressLabel={`${stats.connectedPercent}%`}
+    <section className="mb-8 space-y-6">
+      {/* ─── Compact Quick Stats Row ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
+        <QuickStats
+          stats={[
+            {
+              label: "Connected",
+              value: `${stats.connected} / ${stats.total}`,
+              accentColor: "#6366f1",
+            },
+            {
+              label: "Sync",
+              value: "2 min ago",
+              icon: RefreshCwIcon,
+            },
+            {
+              label: "MCP Tools",
+              value: `${stats.totalMcpTools}`,
+              icon: LayersIcon,
+            },
+            {
+              label: "Health",
+              value: stats.healthy === stats.total ? "Healthy" : `${stats.healthy} Healthy`,
+              icon: ActivityStreamIcon,
+              accentColor: "#10b981",
+            },
+            {
+              label: "AI Ready",
+              value: stats.aiReady ? "Yes" : "Limited",
+              icon: CpuIcon,
+              accentColor: stats.aiReady ? "#10b981" : "#f59e0b",
+            },
+            {
+              label: "Activity",
+              value: `${safeActivities.length} today`,
+              icon: ListChecksIcon,
+            },
+          ]}
         />
+      </motion.div>
 
-        {/* 2. Last Synchronization */}
-        <OverviewCard
-          icon={RefreshCwIcon}
-          title="Last Synchronization"
-          stat="2 minutes ago"
-          description="All active integrations synced successfully"
-          gradient=""
-          iconBg="bg-emerald-50 dark:bg-emerald-950/40"
-          iconColor="text-emerald-600 dark:text-emerald-400"
-        >
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-            <CheckCircleIcon size={10} className="h-2.5 w-2.5" />
-            Success
-          </span>
-        </OverviewCard>
+      {/* ─── Main Dashboard Grid ─── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* AI Readiness + Platform Health - Left 2 cols */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* AI Readiness */}
+          <AiReadinessIndicator
+            score={stats.connectedPercent}
+            connectedSources={stats.connectedDataSources}
+            totalSources={stats.total}
+            totalMcpTools={stats.totalMcpTools}
+            status={stats.aiReady ? "ready" : "limited"}
+          />
 
-        {/* 3. Platform Health */}
-        <OverviewCard
-          icon={ActivityStreamIcon}
-          title="Platform Health"
-          stat={
-            stats.healthy === stats.total
-              ? "All Healthy"
-              : `${stats.healthy} Healthy`
-          }
-          description={`${stats.warning} need attention${stats.errorCount > 0 ? `, ${stats.errorCount} with errors` : ""}`}
-          gradient=""
-          iconBg="bg-sky-50 dark:bg-sky-950/40"
-          iconColor="text-sky-600 dark:text-sky-400"
-        >
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {stats.healthy > 0 && (
-              <HealthIndicator level="healthy" label="Healthy" count={stats.healthy} />
-            )}
-            {stats.warning > 0 && (
-              <HealthIndicator level="warning" label="Needs Attention" count={stats.warning} />
-            )}
-            {stats.errorCount > 0 && (
-              <HealthIndicator level="error" label="Errors" count={stats.errorCount} />
-            )}
-          </div>
-        </OverviewCard>
+          {/* Platform Health */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex flex-col rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/90"
+          >
+            <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
+              Platform Health
+            </h3>
+            <PlatformHealth platforms={platforms} />
+          </motion.div>
+        </div>
 
-        {/* 4. Available MCP Tools */}
-        <OverviewCard
-          icon={LayersIcon}
-          title="Available MCP Tools"
-          stat={`${stats.totalMcpTools} Tools Available`}
-          description="MCP tools across all platforms"
-          gradient=""
-          iconBg="bg-violet-50 dark:bg-violet-950/40"
-          iconColor="text-violet-600 dark:text-violet-400"
-        >
-          {stats.mcpBreakdown.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {stats.mcpBreakdown.slice(0, 4).map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between text-[10px]"
-                >
-                  <span className="font-medium text-zinc-500 dark:text-zinc-400">
-                    {item.name}
-                  </span>
-                  <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                    {item.count}
-                  </span>
-                </div>
-              ))}
-              {stats.mcpBreakdown.length > 4 && (
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center pt-0.5">
-                  +{stats.mcpBreakdown.length - 4} more
-                </p>
-              )}
+        {/* Recent Activity - Right 1 col */}
+        <div className="lg:col-span-1">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="flex h-full flex-col rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/90"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                Recent Activity
+              </h3>
+              <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+                {safeActivities.length} events
+              </span>
             </div>
-          )}
-        </OverviewCard>
-
-        {/* 5. AI Readiness */}
-        <OverviewCard
-          icon={CpuIcon}
-          title="AI Readiness"
-          stat={stats.aiReady ? "Ready" : "Limited"}
-          description={stats.aiReady ? `${stats.connectedDataSources} data sources connected` : `Connect at least 2 platforms to enable full AI features (${stats.connectedDataSources}/2)`}
-          gradient={stats.aiReady ? "" : ""}
-          iconBg={stats.aiReady ? "bg-emerald-50 dark:bg-emerald-950/40" : "bg-amber-50 dark:bg-amber-950/40"}
-          iconColor={stats.aiReady ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}
-        >
-          <div className="mt-2 flex items-center gap-1.5">
-            {stats.aiReady ? (
-              <>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  <AiSparklesIcon size={10} className="h-2.5 w-2.5" />
-                  AI Ready
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100/80 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                  <AlertTriangleIcon size={10} className="h-2.5 w-2.5" />
-                  Limited
-                </span>
-              </>
-            )}
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
-              {stats.connectedDataSources} / {stats.total} sources
-            </span>
-          </div>
-        </OverviewCard>
-
-        {/* 6. Recent Activity */}
-        <OverviewCard
-          icon={ListChecksIcon}
-          title="Recent Activity"
-          stat={`${safeActivities.length} events`}
-          description="Latest integration activity"
-          gradient=""
-          iconBg="bg-indigo-50 dark:bg-indigo-950/40"
-          iconColor="text-indigo-600 dark:text-indigo-400"
-        >
-          <div className="mt-2">
-            <ActivityTimeline activities={safeActivities} />
-          </div>
-        </OverviewCard>
-      </StatsGrid>
+            <div className="flex-1 overflow-y-auto max-h-[320px] scrollbar-thin">
+              <ActivityTimeline activities={safeActivities} maxItems={15} />
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </section>
   );
 };
