@@ -23,3 +23,9 @@ export {
   getActivityLogs,
 } from "./activity";
 export type { LogActivityInput, ActivityLogEntry } from "./activity";
+
+export {
+  getUserPreferences,
+  upsertUserPreferences,
+} from "./userPreferences";
+export type { UpsertUserPreferencesInput } from "./userPreferences";

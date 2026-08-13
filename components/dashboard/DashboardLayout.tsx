@@ -28,7 +28,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
     const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialDark = savedTheme ? savedTheme === "dark" : isSystemDark;
+    const initialDark =
+      savedTheme === "dark" || ((savedTheme === "system" || !savedTheme) && isSystemDark);
 
     setIsDarkMode(initialDark);
     if (initialDark) {
@@ -36,6 +37,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     } else {
       document.documentElement.classList.remove("dark");
     }
+
+    // Follow system changes while the user is on the "system" theme.
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (event: MediaQueryListEvent) => {
+      const current = localStorage.getItem("theme");
+      if (current === "system") {
+        const nextDark = event.matches;
+        setIsDarkMode(nextDark);
+        document.documentElement.classList.toggle("dark", nextDark);
+      }
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
   }, []);
 
   const handleToggleDarkMode = () => {

@@ -13,7 +13,8 @@ export default function Head() {
               try {
                 var theme = localStorage.getItem('theme');
                 var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (theme === 'dark' || (!theme && prefersDark)) {
+                var useDark = theme === 'dark' || ((theme === 'system' || !theme) && prefersDark);
+                if (useDark) {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');

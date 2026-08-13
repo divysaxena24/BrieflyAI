@@ -20,6 +20,104 @@
 import { AIError, AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 
+// ──────────────────────────────────────────────
+//  Diagnostic instrumentation (DEBUG_GROQ=true)
+//  Temporary — logs request/prompt/response details only. No behavior change.
+// ──────────────────────────────────────────────
+
+/** Master switch: `DEBUG_GROQ=true` enables the diagnostic logs below. */
+const DEBUG_GROQ = process.env.DEBUG_GROQ === "true";
+
+/** Emit one diagnostic line when DEBUG_GROQ is enabled. */
+function groqDebug(fields: Record<string, unknown>): void {
+  if (!DEBUG_GROQ) return;
+  logger.info("[groq-debug]", fields);
+}
+
+/** Per-request id (UUID when available). */
+function newRequestId(): string {
+  try {
+    const c = globalThis.crypto as Crypto | undefined;
+    if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  } catch {
+    /* fall through */
+  }
+  return `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Rough prompt-token estimate — no tokenizer exists in this repo (chars/4 heuristic). */
+function estimateTokens(chars: number): number {
+  return Math.ceil(chars / 4);
+}
+
+/**
+ * Best-effort extraction of injected integration data (array lengths) from a
+ * user message that embeds `Tool data (JSON): …`. Never logs content.
+ */
+function describeInjectedData(userContent: string): Record<string, unknown> | null {
+  const marker = "Tool data (JSON):";
+  const idx = userContent.indexOf(marker);
+  if (idx === -1) return null;
+  try {
+    const parsed: unknown = JSON.parse(userContent.slice(idx + marker.length).trim());
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+    const record = parsed as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(record)) {
+      if (Array.isArray(v)) out[`${k} (array length)`] = v.length;
+      else if (v !== null && typeof v === "object") out[k] = "(object)";
+      else out[k] = v;
+    }
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/** Classify a Groq failure for the diagnostic log. */
+function classifyGroqStatus(status: number | null | undefined, bodyText: string): string {
+  if (status === 401) return "Authentication";
+  if (status === 403) return "Authorization";
+  if (status === 404) return "Invalid Model";
+  if (status === 408) return "Timeout";
+  if (status === 429) {
+    const b = bodyText.toLowerCase();
+    if (b.includes("token")) return "Token Rate Limit";
+    if (b.includes("request") && b.includes("rate")) return "Request Rate Limit";
+    return "Rate Limit (see body)";
+  }
+  if (status === 400) {
+    const b = bodyText.toLowerCase();
+    if (b.includes("json")) return "Invalid JSON";
+    if (b.includes("context_length") || b.includes("context length") || b.includes("too long") || b.includes("prompt")) {
+      return "Prompt Too Long";
+    }
+    if (b.includes("large")) return "Request Too Large";
+    return "Bad Request (see body)";
+  }
+  if (status !== null && status !== undefined && status >= 500) return "Provider Internal Error";
+  if (status === null || status === undefined) return "Timeout / Network";
+  return "Unknown";
+}
+
+/** All rate-limit related response headers, or "missing" when absent. */
+function rateLimitHeaderLog(res: Response): Record<string, unknown> {
+  const names = [
+    "x-ratelimit-limit-requests",
+    "x-ratelimit-remaining-requests",
+    "x-ratelimit-reset-requests",
+    "x-ratelimit-limit-tokens",
+    "x-ratelimit-remaining-tokens",
+    "x-ratelimit-reset-tokens",
+    "retry-after",
+  ];
+  const out: Record<string, unknown> = {};
+  for (const name of names) {
+    out[name] = res.headers.get(name) ?? "missing";
+  }
+  return out;
+}
+
 /** Groq OpenAI-compatible chat completions endpoint. */
 export const GROQ_CHAT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -116,8 +214,17 @@ export function mapGroqError(status: number | null | undefined, body?: unknown):
   if (status === null || status === undefined) {
     return new AppError(message, 502, "groq_error");
   }
-  if (status === 401 || status === 403) {
+  // 401 = the API key itself is rejected. Keep this message precise so a real
+  // key problem is never hidden behind a generic provider message.
+  if (status === 401) {
     return new AppError("Groq authentication failed — check GROQ_API_KEY", 502, "groq_authentication_error");
+  }
+  // 403 = the key authenticated, but the request was refused for a
+  // permission reason (e.g. a model blocked at the project level, an
+  // org/region restriction). Surface the provider's exact message instead of
+  // mislabeling it as an authentication failure.
+  if (status === 403) {
+    return new AppError(message, 502, "groq_permission_error");
   }
   if (status === 429) {
     return new AppError("Groq rate limit exceeded", 429, "rate_limited");
@@ -176,6 +283,35 @@ export class GroqService implements GroqClient {
       throw new AppError("AI service is not configured (GROQ_API_KEY missing)", 503, "ai_not_configured");
     }
 
+    const requestId = newRequestId();
+    const startedAt = Date.now();
+    const messages = options.messages;
+    const perMessage = messages.map((m) => ({ role: m.role, chars: m.content.length }));
+    const totalChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+    const injectedData = messages
+      .filter((m) => m.role === "user")
+      .map((m) => describeInjectedData(m.content))
+      .filter((d): d is Record<string, unknown> => d !== null);
+
+    // 1) Request metadata + 2) prompt size + 3) injected data counts.
+    groqDebug({
+      event: "request",
+      requestId,
+      endpoint: GROQ_CHAT_ENDPOINT,
+      method: "POST",
+      model: this.model,
+      temperature: options.temperature ?? 0.3,
+      maxTokens: options.maxTokens ?? DEFAULT_GROQ_MAX_TOKENS,
+      stream: false,
+      jsonMode: options.jsonMode === true,
+      authorization: "Bearer ****", // never the key
+      messageCount: messages.length,
+      perMessage,
+      totalChars,
+      estimatedPromptTokens: estimateTokens(totalChars),
+      injectedData: injectedData.length > 0 ? injectedData : undefined,
+    });
+
     const body: Record<string, unknown> = {
       model: this.model,
       messages: options.messages,
@@ -186,6 +322,14 @@ export class GroqService implements GroqClient {
       body.response_format = { type: "json_object" };
     }
 
+    const payloadJson = JSON.stringify(body);
+    groqDebug({
+      event: "payload",
+      requestId,
+      payloadChars: payloadJson.length,
+      payloadBytes: new TextEncoder().encode(payloadJson).length,
+    });
+
     let res: Response;
     try {
       res = await fetch(GROQ_CHAT_ENDPOINT, {
@@ -194,14 +338,25 @@ export class GroqService implements GroqClient {
           Authorization: `Bearer ${key}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: payloadJson,
         signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
       });
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
+      groqDebug({
+        event: "response",
+        requestId,
+        httpStatus: null,
+        durationMs: Date.now() - startedAt,
+        classification: "Timeout / Network",
+        error: detail,
+      });
       logger.warn("Groq: request failed", { error: detail });
       throw new AppError("Groq request failed", 502, "groq_error", detail);
     }
+
+    const durationMs = Date.now() - startedAt;
+    const rateLimitHeaders = rateLimitHeaderLog(res);
 
     if (!res.ok) {
       let bodyText = "";
@@ -210,6 +365,24 @@ export class GroqService implements GroqClient {
       } catch {
         bodyText = "";
       }
+      // 6-9) Status + rate-limit headers + full raw body + timing + classification.
+      // Full body is logged for error responses only (Groq error bodies never
+      // contain the key); success bodies are summarized to avoid echoing data.
+      groqDebug({
+        event: "response",
+        requestId,
+        httpStatus: res.status,
+        durationMs,
+        rateLimitHeaders,
+        rawBody: bodyText,
+        classification: classifyGroqStatus(res.status, bodyText),
+      });
+      // Log the exact provider response (status + redacted body) before
+      // mapping, so the real failure reason is never lost. Never log the key.
+      logger.warn("Groq: non-OK response", {
+        status: res.status,
+        bodyPreview: bodyText.slice(0, 500),
+      });
       let parsed: unknown;
       try {
         parsed = bodyText ? JSON.parse(bodyText) : null;
@@ -223,15 +396,41 @@ export class GroqService implements GroqClient {
     try {
       payload = await res.json();
     } catch (err) {
+      groqDebug({
+        event: "response",
+        requestId,
+        httpStatus: res.status,
+        durationMs,
+        classification: "Unknown (malformed JSON body)",
+        error: String(err),
+      });
       logger.warn("Groq: malformed response body", { error: String(err) });
       throw new AIError("Malformed Groq response: invalid JSON body");
     }
 
     const content = extractContent(payload);
     if (typeof content !== "string" || content.trim().length === 0) {
+      groqDebug({
+        event: "response",
+        requestId,
+        httpStatus: res.status,
+        durationMs,
+        classification: "Unknown (empty content)",
+      });
       logger.warn("Groq: response contained no content");
       throw new AIError("Malformed Groq response: empty content");
     }
+
+    groqDebug({
+      event: "response",
+      requestId,
+      httpStatus: res.status,
+      durationMs,
+      rateLimitHeaders,
+      classification: "Success",
+      contentChars: content.length,
+      usage: extractUsage(payload) ?? undefined,
+    });
 
     return {
       text: content,

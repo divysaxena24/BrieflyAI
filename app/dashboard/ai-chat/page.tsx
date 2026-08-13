@@ -4,24 +4,24 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/dashboard";
 import { AiSparklesIcon, MessageIcon } from "@/components/dashboard/icons";
+import {
+  AiResponseSkeleton,
+  ErrorState,
+  ResponseRenderer,
+  integrationOf,
+  toolLabel,
+} from "@/components/ai";
+import type { AISource } from "@/components/ai";
 
 // ──────────────────────────────────────────────
 //  Types
 // ──────────────────────────────────────────────
 
-interface SourceRef {
-  integration: string;
-  type: string;
-  id: string;
-  title?: string;
-  url?: string;
-}
-
 interface AIResponseData {
   success: boolean;
   tool: string;
   data: Record<string, unknown>;
-  sources: SourceRef[];
+  sources: AISource[];
   response: string | null;
   note?: string;
   aiError?: { code: string; message: string };
@@ -34,74 +34,14 @@ type ChatMessage =
       role: "assistant";
       content: string;
       tool?: string;
-      sources?: SourceRef[];
+      sources?: AISource[];
+      data?: Record<string, unknown>;
       note?: string;
       aiError?: { code: string; message: string };
       error?: string;
       /** Machine-readable error code from the API (e.g. reconnect_required). */
       errorCode?: string;
     };
-
-// ──────────────────────────────────────────────
-//  Helpers
-// ──────────────────────────────────────────────
-
-/** Friendly label for an integration family. */
-/**
- * Error codes that mean the user needs to re-establish an integration
- * connection (expired session, revoked token, disconnected platform).
- */
-function isReconnectError(code: string): boolean {
-  return [
-    "reconnect_required",
-    "authentication_required",
-    "missing_refresh_token",
-    "discord_not_connected",
-    "telegram_not_connected",
-    "google_not_connected",
-    "github_not_connected",
-    "token_not_found",
-  ].includes(code);
-}
-
-function integrationLabel(integration: string): string {
-  const labels: Record<string, string> = {
-    gmail: "Gmail",
-    calendar: "Calendar",
-    drive: "Drive",
-    github: "GitHub",
-    discord: "Discord",
-    telegram: "Telegram",
-  };
-  return labels[integration] ?? integration;
-}
-
-/** Friendly label for a tool id, e.g. "gmail.summarizeInbox". */
-function toolLabel(toolId: string): string {
-  const labels: Record<string, string> = {
-    "gmail.summarizeInbox": "Inbox summary",
-    "gmail.findImportantEmails": "Important emails",
-    "gmail.findUnreadEmails": "Unread emails",
-    "gmail.searchEmails": "Email search",
-    "gmail.summarizeThread": "Thread summary",
-    "calendar.todaySchedule": "Today's schedule",
-    "calendar.upcomingMeetings": "Upcoming meetings",
-    "calendar.meetingPreparation": "Meeting prep",
-    "calendar.scheduleSummary": "Schedule summary",
-    "drive.searchFiles": "Drive search",
-    "drive.recentFiles": "Recent files",
-    "drive.summarizeDocument": "Document summary",
-    "github.repositorySummary": "Repository summary",
-    "github.recentActivity": "Repository activity",
-    "github.openIssuesSummary": "Open issues",
-    "discord.listGuilds": "Discord servers",
-    "discord.botRequired": "Discord bot required",
-    "telegram.chatSummary": "Chat summary",
-    "telegram.recentMessages": "Recent messages",
-    "telegram.newsDigest": "News digest",
-  };
-  return labels[toolId] ?? toolId;
-}
 
 const SUGGESTIONS = [
   "Summarize my inbox",
@@ -180,6 +120,7 @@ export default function AiChatPage() {
           content: responseText,
           tool: data.tool,
           sources: data.sources ?? [],
+          data: data.data,
           note: data.note,
           aiError: data.aiError,
         },
@@ -237,17 +178,36 @@ export default function AiChatPage() {
             </div>
           )}
 
-          {messages.map((message, index) => (
-            <ChatBubble key={index} message={message} />
-          ))}
+          {messages.map((message, index) => {
+            // Query that produced this assistant message (for regenerate).
+            let regenerateQuery: string | null = null;
+            if (message.role === "assistant") {
+              for (let i = index - 1; i >= 0; i--) {
+                if (messages[i].role === "user") {
+                  regenerateQuery = messages[i].content;
+                  break;
+                }
+              }
+            }
+            return (
+              <ChatBubble
+                key={index}
+                message={message}
+                onRegenerate={
+                  regenerateQuery
+                    ? () => {
+                        void send(regenerateQuery as string);
+                      }
+                    : undefined
+                }
+              />
+            );
+          })}
 
           {isLoading && (
-            <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-brand-500" />
-              <span className="h-2 w-2 animate-pulse rounded-full bg-brand-500 [animation-delay:150ms]" />
-              <span className="h-2 w-2 animate-pulse rounded-full bg-brand-500 [animation-delay:300ms]" />
-              <span>{activeTool ? `Running ${toolLabel(activeTool)}…` : "Finding the right tool…"}</span>
-            </div>
+            <AiResponseSkeleton
+              label={activeTool ? `Running ${toolLabel(activeTool)}…` : "Finding the right tool…"}
+            />
           )}
           <div ref={bottomRef} />
         </div>
@@ -300,7 +260,13 @@ export default function AiChatPage() {
 //  Chat bubble
 // ──────────────────────────────────────────────
 
-function ChatBubble({ message }: { message: ChatMessage }) {
+function ChatBubble({
+  message,
+  onRegenerate,
+}: {
+  message: ChatMessage;
+  onRegenerate?: () => void;
+}) {
   const isUser = message.role === "user";
 
   if (isUser) {
@@ -313,29 +279,23 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     );
   }
 
+  // Request-level failure → friendly error state (never raw backend errors).
   if (message.error) {
-    const needsReconnect = isReconnectError(message.errorCode ?? "");
     return (
       <div className="flex justify-start">
-        <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
-          <p className="font-bold">Something went wrong</p>
-          <p className="mt-0.5 text-xs">{message.error}</p>
-          {needsReconnect && (
-            <Link
-              href="/dashboard/integrations"
-              className="mt-2 inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-red-500"
-            >
-              Reconnect integrations
-            </Link>
-          )}
+        <div className="max-w-[85%]">
+          <ErrorState
+            message={message.error}
+            code={message.errorCode}
+            integration={integrationOf(message.tool)}
+          />
         </div>
       </div>
     );
   }
 
   // Discord channel/message requests are answered with the canned
-  // "Discord Bot Required" explanation — show it as a friendly info card
-  // (the integration itself is healthy, so no reconnect prompt is shown).
+  // "Discord Bot Required" explanation — show it as a friendly info banner.
   if (message.tool === "discord.botRequired") {
     return (
       <div className="flex justify-start">
@@ -355,63 +315,18 @@ function ChatBubble({ message }: { message: ChatMessage }) {
     );
   }
 
+  // Structured AI response.
   return (
     <div className="flex justify-start">
-      <div className="max-w-[85%]">
-        <div className="rounded-2xl rounded-bl-md border border-zinc-200/80 bg-zinc-50 px-4 py-3 text-sm leading-relaxed text-zinc-800 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-100">
-          {message.content.split("\n").map((line, index) =>
-            line.length === 0 ? (
-              <div key={index} className="h-2" />
-            ) : (
-              <p key={index}>{line}</p>
-            ),
-          )}
-          {message.aiError && (
-            <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
-              Note: AI summarization was unavailable ({message.aiError.message}), so you&apos;re
-              seeing the raw data.
-            </p>
-          )}
-          {message.note && (
-            <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">{message.note}</p>
-          )}
-        </div>
-
-        {/* Tool + sources chip */}
-        {(message.tool || (message.sources && message.sources.length > 0)) && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 px-1">
-            {message.tool && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-bold text-brand-700 dark:bg-brand-950/50 dark:text-brand-300">
-                <AiSparklesIcon size={11} className="h-3 w-3" />
-                {toolLabel(message.tool)}
-              </span>
-            )}
-            {message.sources?.map((source) => (
-              <SourceChip key={`${source.integration}:${source.id}`} source={source} />
-            ))}
-          </div>
-        )}
-      </div>
+      <ResponseRenderer
+        content={message.content}
+        tool={message.tool}
+        sources={message.sources}
+        note={message.note}
+        aiError={message.aiError}
+        data={message.data}
+        onRegenerate={onRegenerate}
+      />
     </div>
   );
-}
-
-/** Small chip showing a source reference. */
-function SourceChip({ source }: { source: SourceRef }) {
-  const body = (
-    <>
-      <span className="font-bold">{integrationLabel(source.integration)}</span>
-      {source.title ? ` · ${source.title}` : ` · ${source.type}`}
-    </>
-  );
-  const className =
-    "inline-flex max-w-[16rem] items-center gap-1 truncate rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] text-zinc-600 transition-colors hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300";
-  if (source.url) {
-    return (
-      <a href={source.url} target="_blank" rel="noreferrer" className={className} title={source.title}>
-        {body}
-      </a>
-    );
-  }
-  return <span className={className}>{body}</span>;
 }

@@ -76,10 +76,26 @@ describe("Groq configuration", () => {
 // ──────────────────────────────────────────────
 
 describe("mapGroqError", () => {
-  it("maps 401/403 to a groq authentication error", () => {
+  it("maps 401 to a groq authentication error", () => {
     const err = mapGroqError(401);
     expect(err).toBeInstanceOf(AppError);
     expect(err.code).toBe("groq_authentication_error");
+    expect(err.message).toContain("GROQ_API_KEY");
+  });
+
+  it("maps 403 to a groq permission error and surfaces the provider message", () => {
+    const err = mapGroqError(403, {
+      error: {
+        message: "The model `llama-3.3-70b-versatile` is blocked at the project level.",
+        type: "permissions_error",
+        code: "model_permission_blocked_project",
+      },
+    });
+    expect(err).toBeInstanceOf(AppError);
+    expect(err.code).toBe("groq_permission_error");
+    expect(err.message).toContain("blocked at the project level");
+    // A permission refusal must never be mislabeled as a key problem.
+    expect(err.message).not.toContain("GROQ_API_KEY");
   });
 
   it("maps 429 to rate_limited", () => {
@@ -165,6 +181,28 @@ describe("GroqService.complete", () => {
     await expect(
       client.complete({ messages: [{ role: "user", content: "hi" }] }),
     ).rejects.toMatchObject({ code: "rate_limited" });
+  });
+
+  it("surfaces the provider message for a 403 permission refusal", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: {
+            message: "The model `llama-3.3-70b-versatile` is blocked at the project level. Please have a project admin enable this model.",
+            type: "permissions_error",
+            code: "model_permission_blocked_project",
+          },
+        },
+        403,
+      ),
+    );
+    const client = new GroqService({ apiKey: "gsk_secret" });
+    await expect(
+      client.complete({ messages: [{ role: "user", content: "hi" }] }),
+    ).rejects.toMatchObject({
+      code: "groq_permission_error",
+      message: expect.stringContaining("blocked at the project level"),
+    });
   });
 
   it("throws AIError on a malformed JSON response body", async () => {
