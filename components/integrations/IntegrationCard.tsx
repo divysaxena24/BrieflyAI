@@ -26,19 +26,19 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({ integration })
 
       <div>
         {/* Header: Icon, name, category + status */}
-        <div className="mb-4 flex items-start justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 items-center gap-3">
             <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-white"
               style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
             >
               <PlatformIcon platformId={id} size={22} />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-bold text-zinc-900 dark:text-white">
                 {name}
               </h3>
-              <span className="text-xs font-medium text-zinc-400">
+              <span className="block truncate text-xs font-medium text-zinc-400">
                 {category}
               </span>
             </div>

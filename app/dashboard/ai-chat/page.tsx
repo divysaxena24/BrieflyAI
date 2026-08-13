@@ -147,7 +147,7 @@ export default function AiChatPage() {
         badge="Groq-powered"
       />
 
-      <div className="flex h-[calc(100vh-15rem)] min-h-[28rem] flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
+      <div className="flex h-[calc(100dvh-13rem)] min-h-[20rem] flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90 sm:h-[calc(100dvh-15rem)] sm:min-h-[24rem] lg:min-h-[28rem]">
         {/* ── Messages ── */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {messages.length === 0 && !isLoading && (
@@ -272,7 +272,7 @@ function ChatBubble({
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-brand-600/15 dark:bg-brand-500">
+        <div className="max-w-[85%] [overflow-wrap:anywhere] rounded-2xl rounded-br-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-md shadow-brand-600/15 dark:bg-brand-500">
           {message.content}
         </div>
       </div>
@@ -301,7 +301,7 @@ function ChatBubble({
       <div className="flex justify-start">
         <div className="max-w-[85%] rounded-2xl rounded-bl-md border border-sky-200 bg-sky-50/80 px-4 py-3.5 text-sm text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-100">
           <p className="font-bold">Discord Bot Required</p>
-          <p className="mt-1.5 text-xs leading-relaxed">{message.content}</p>
+          <p className="mt-1.5 text-xs leading-relaxed [overflow-wrap:anywhere]">{message.content}</p>
           <p className="mt-3 text-xs font-semibold">BrieflyAI currently supports:</p>
           <ul className="mt-1 space-y-0.5 text-xs">
             <li>✓ Listing your Discord servers</li>

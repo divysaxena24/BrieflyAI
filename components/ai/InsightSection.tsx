@@ -45,7 +45,7 @@ export function InsightSection({ items }: { items: InlineSegment[][] }) {
                   <p className="text-xs font-bold text-zinc-900 dark:text-white">{label}</p>
                 )}
                 {rest.length > 0 && (
-                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-0.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400 [overflow-wrap:anywhere]">
                     <RichText segments={rest} />
                   </p>
                 )}

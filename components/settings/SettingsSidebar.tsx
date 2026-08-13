@@ -60,7 +60,7 @@ export function SettingsSidebar({ items, activeId, onSelect }: SettingsSidebarPr
       {/* Mobile: horizontal tabs */}
       <nav
         aria-label="Settings sections"
-        className="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 lg:hidden"
+        className="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:hidden"
       >
         {items.map((item) => {
           const Icon = item.icon;

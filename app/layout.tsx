@@ -45,13 +45,13 @@ export default async function RootLayout({
         {/* Top banner when authenticated (only shown outside dashboard) */}
         {currentUser && (
           <div className="border-b border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950/30">
-            <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-6">
-              <span className="text-xs text-brand-700 dark:text-brand-300">
+            <div className="mx-auto flex h-9 max-w-7xl items-center justify-between px-4 sm:px-6">
+              <span className="min-w-0 flex-1 truncate text-xs text-brand-700 dark:text-brand-300">
                 Signed in as {currentUser.fullName ?? currentUser.email ?? "User"}
               </span>
               <Link
                 href="/dashboard"
-                className="text-xs font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
+                className="ml-4 shrink-0 text-xs font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400"
               >
                 Dashboard &rarr;
               </Link>

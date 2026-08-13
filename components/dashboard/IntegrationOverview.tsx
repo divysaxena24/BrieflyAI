@@ -59,7 +59,7 @@ export const IntegrationOverview: React.FC = () => {
 
             {/* Name + account */}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                   {platform.name}
                 </h3>

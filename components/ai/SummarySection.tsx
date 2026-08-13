@@ -8,7 +8,7 @@ import type { InlineSegment } from "./types";
 export function SummarySection({ segments }: { segments: InlineSegment[] }) {
   if (!segments || segments.length === 0) return null;
   return (
-    <p className="max-w-prose text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+    <p className="max-w-prose text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 [overflow-wrap:anywhere]">
       <RichText segments={segments} />
     </p>
   );

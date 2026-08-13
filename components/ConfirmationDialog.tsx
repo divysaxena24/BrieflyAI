@@ -131,8 +131,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       />
 
       {/* Dialog card */}
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
-        <div className="p-6">
+      <div className="relative flex max-h-[85vh] w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {/* Header */}
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950/60">
@@ -168,7 +168,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           )}
 
           {/* Actions */}
-          <div className="mt-5 flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
             <button
               type="button"
               onClick={handleCancel}

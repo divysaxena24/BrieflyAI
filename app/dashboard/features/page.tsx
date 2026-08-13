@@ -176,7 +176,7 @@ export default function FeaturesPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
+            className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
           >
             <Check size={14} className="h-3.5 w-3.5 text-emerald-400 dark:text-emerald-600" />
             {toast}

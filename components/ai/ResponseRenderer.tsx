@@ -35,7 +35,7 @@ export interface ResponseRendererProps {
 /** Prose paragraph used inside generic sections. */
 function Prose({ segments }: { segments: InlineSegment[] }) {
   return (
-    <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+    <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 [overflow-wrap:anywhere]">
       <RichText segments={segments} />
     </p>
   );

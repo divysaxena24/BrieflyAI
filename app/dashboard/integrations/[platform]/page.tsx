@@ -125,8 +125,8 @@ export default function PlatformSettingsPage() {
           {/* Connection Status & Account Info */}
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
             <h3 className="mb-4 text-sm font-bold text-zinc-900 dark:text-white">Connection Status</h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <ConnectionBadge status={status} />
                 {isConnected && (
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -134,7 +134,7 @@ export default function PlatformSettingsPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {isConnected ? (
                   <button
                     type="button"
@@ -173,12 +173,14 @@ export default function PlatformSettingsPage() {
                   Connected Account
                 </h4>
 
-                <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-2.5 text-xs">
+                <div className="grid min-w-0 grid-cols-[100px_1fr] gap-x-4 gap-y-2.5 text-xs">
                   {/* Email */}
                   <span className="font-medium text-zinc-400">Email</span>
-                  <span className="flex items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
-                    <MailIcon size={12} className="h-3 w-3 text-zinc-400" />
-                    {integration.account ?? "Not available"}
+                  <span className="flex min-w-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-200">
+                    <MailIcon size={12} className="h-3 w-3 shrink-0 text-zinc-400" />
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      {integration.account ?? "Not available"}
+                    </span>
                   </span>
 
                   {/* Provider */}
@@ -204,7 +206,7 @@ export default function PlatformSettingsPage() {
                   {integration.scopes && (
                     <>
                       <span className="font-medium text-zinc-400">Scopes</span>
-                      <span className="text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                      <span className="min-w-0 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400 [overflow-wrap:anywhere] line-clamp-2">
                         {integration.scopes.split(" ").map((s) => s.split("/").pop() || s).join(", ")}
                       </span>
                     </>

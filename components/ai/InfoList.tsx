@@ -29,7 +29,7 @@ export function InfoList({ items }: { items: InlineSegment[][] }) {
               <dt className="w-full shrink-0 text-xs font-bold text-zinc-900 dark:text-white sm:w-40">
                 {label}
               </dt>
-              <dd className="min-w-0 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              <dd className="min-w-0 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400 [overflow-wrap:anywhere]">
                 <RichText segments={rest} />
               </dd>
             </div>

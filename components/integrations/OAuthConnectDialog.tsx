@@ -77,14 +77,14 @@ const OAuthConnectDialogInner: React.FC<OAuthConnectDialogInnerProps> = ({ platf
       />
 
       {/* Dialog card */}
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
         {/* Accent bar */}
         <div
-          className="absolute inset-x-0 top-0 h-1"
+          className="absolute inset-x-0 top-0 h-1 shrink-0"
           style={{ backgroundColor: integration.accentColor }}
         />
 
-        <div className="p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {/* Header */}
           <div className="mb-5 flex items-center gap-3">
             <div
@@ -192,7 +192,7 @@ const OAuthConnectDialogInner: React.FC<OAuthConnectDialogInnerProps> = ({ platf
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
             <button
               type="button"
               onClick={closeConnectDialog}

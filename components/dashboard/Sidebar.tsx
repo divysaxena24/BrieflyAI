@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside
       className={`flex flex-col border-r border-zinc-200/80 bg-white transition-all duration-300 dark:border-zinc-800/80 dark:bg-zinc-900/90 ${
         isMobileDrawer
-          ? "w-72 h-full"
+          ? "w-full h-full"
           : collapsed
           ? "w-20"
           : "w-64"

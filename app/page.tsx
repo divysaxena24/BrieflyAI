@@ -10,7 +10,7 @@ export default async function Home() {
     <div className="flex flex-col flex-1 font-sans">
       {/* ──────────────── HEADER ──────────────── */}
       <header className="sticky top-0 z-50 w-full border-b border-zinc-200/60 bg-white/80 backdrop-blur-xl dark:border-zinc-800/60 dark:bg-[#0b0f1a]/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-bold text-white">
@@ -63,14 +63,14 @@ export default async function Home() {
       {/* ─── Full page content (same as before) ─── */}
       <main id="main-content">
       {/* ──────────────── HERO ──────────────── */}
-      <section aria-label="Hero" className="relative isolate overflow-hidden px-6 pt-24 pb-20 md:pt-32 md:pb-28">
+      <section aria-label="Hero" className="relative isolate overflow-hidden px-4 pt-24 pb-20 sm:px-6 md:pt-32 md:pb-28">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-brand-400/10 blur-3xl dark:bg-brand-500/10" />
           <div className="absolute right-0 bottom-0 h-[400px] w-[400px] rounded-full bg-accent-400/10 blur-3xl dark:bg-accent-500/10" />
         </div>
 
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center text-center lg:flex-row lg:text-left lg:items-center lg:justify-between gap-12">
+          <div className="flex flex-col items-center text-center lg:flex-row lg:text-left lg:items-center lg:justify-between gap-8 lg:gap-12">
             <div className="max-w-2xl flex-1">
               <div className="mb-6 inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-medium text-brand-700 dark:border-brand-800 dark:bg-brand-900/40 dark:text-brand-300">
                 <span className="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
@@ -192,7 +192,7 @@ export default async function Home() {
       </section>
 
       {/* ──────────────── INTEGRATIONS ──────────────── */}
-      <section aria-label="Supported platforms" id="integrations" className="border-y border-zinc-100 bg-zinc-50/50 px-6 py-20 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <section aria-label="Supported platforms" id="integrations" className="border-y border-zinc-100 bg-zinc-50/50 px-4 py-20 dark:border-zinc-800 dark:bg-zinc-900/50 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400">Seamless Integration</p>
@@ -226,7 +226,7 @@ export default async function Home() {
       </section>
 
       {/* ──────────────── FEATURES ──────────────── */}
-      <section aria-label="Features" id="features" className="px-6 py-20 md:py-28">
+      <section aria-label="Features" id="features" className="px-4 py-20 sm:px-6 md:py-28">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400">Powerful Features</p>
@@ -253,7 +253,7 @@ export default async function Home() {
       </section>
 
       {/* ──────────────── HOW IT WORKS ──────────────── */}
-      <section aria-label="How it works" id="how-it-works" className="border-y border-zinc-100 bg-zinc-50/50 px-6 py-20 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <section aria-label="How it works" id="how-it-works" className="border-y border-zinc-100 bg-zinc-50/50 px-4 py-20 dark:border-zinc-800 dark:bg-zinc-900/50 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400">Simple Setup</p>
@@ -282,7 +282,7 @@ export default async function Home() {
       </section>
 
       {/* ──────────────── CTA ──────────────── */}
-      <section aria-label="Get started" id="get-started" className="px-6 py-20 md:py-28">
+      <section aria-label="Get started" id="get-started" className="px-4 py-20 sm:px-6 md:py-28">
         <div className="mx-auto max-w-4xl">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 px-8 py-16 text-center shadow-2xl dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 sm:px-16">
             <div className="pointer-events-none absolute inset-0 -z-10">
@@ -306,7 +306,7 @@ export default async function Home() {
       </main>
 
       {/* ──────────────── FOOTER ──────────────── */}
-      <footer className="border-t border-zinc-200 bg-zinc-50 px-6 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <footer className="border-t border-zinc-200 bg-zinc-50 px-4 dark:border-zinc-800 dark:bg-zinc-900/50 sm:px-6">
         <div className="mx-auto max-w-7xl py-16">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-2">

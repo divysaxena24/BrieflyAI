@@ -36,7 +36,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-[#0b0f1a]">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-[#0b0f1a] sm:px-6">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <Link href="/" className="mx-auto mb-8 flex w-fit items-center gap-2">
