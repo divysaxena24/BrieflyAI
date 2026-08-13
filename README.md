@@ -25,11 +25,11 @@ BrieflyAI is an AI-powered productivity assistant that connects the tools you al
 
 ---
 
-## ✨ Features
+## Features
 
 BrieflyAI routes every request through a **tool planner → executor → Groq summarizer** pipeline. Tools retrieve *real* data from your connected accounts; the AI then explains it in plain language — nothing is fabricated.
 
-### 🧠 AI Assistant
+### AI Assistant
 
 | Capability | Description |
 | --- | --- |
@@ -39,7 +39,7 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 | Smart search | Gmail-syntax search, Drive file search, Telegram message search |
 | Context-aware responses | Actions, insights, and sources rendered as structured cards |
 
-### ✉️ Gmail
+### Gmail
 
 - Inbox summaries
 - Email search (including Gmail syntax such as `has:attachment`)
@@ -47,32 +47,32 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 - Important email ranking
 - Thread summaries
 
-### 📅 Google Calendar
+### Google Calendar
 
 - Upcoming meetings
 - Daily schedule
 - Weekly overview
 - Meeting preparation briefs
 
-### 📁 Google Drive
+### Google Drive
 
 - Recent files
 - Search files
 - Document summaries
 
-### 🐙 GitHub
+### GitHub
 
 - Repository summaries
 - Open issues summary
 - Recent activity (commits, PRs, releases)
 
-### 🎮 Discord
+### Discord
 
 **Supported:** list your servers · summarize servers
 
 **Limitation:** reading channels/messages requires a Discord Bot — Discord's OAuth API doesn't expose those endpoints, so the assistant explains the requirement instead of returning empty data.
 
-### ✈️ Telegram
+### Telegram
 
 - Recent messages
 - Accessible chats (chats the bot has been added to)
@@ -80,7 +80,7 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 > Add real screenshots to `docs/images/` and update the paths below.
 
@@ -92,7 +92,7 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -128,7 +128,7 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
@@ -154,7 +154,7 @@ flowchart TD
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 brieflyai/
@@ -183,7 +183,7 @@ brieflyai/
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ```bash
 # 1. Clone the repository
@@ -207,7 +207,7 @@ Open [http://localhost:3000](http://localhost:3000). Sign in with Google, then c
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 <details>
 <summary><b>Required for the app to run</b></summary>
@@ -252,7 +252,7 @@ Open [http://localhost:3000](http://localhost:3000). Sign in with Google, then c
 
 ---
 
-## 💬 Usage
+## Usage
 
 Once integrations are connected, open the **AI Assistant** and ask:
 
@@ -268,7 +268,7 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ---
 
-## 🎯 Design Goals
+## Design Goals
 
 - **Modern SaaS UI** — polished, product-grade interface
 - **Responsive design** — clean at 320px through 1920px (mobile drawer, adaptive grids)
@@ -279,7 +279,7 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ---
 
-## 🔒 Security
+## Security
 
 - **OAuth 2.0 authentication** for every integration — no third-party passwords
 - **No password storage** — app auth is delegated to Supabase (email + Google)
@@ -289,7 +289,7 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ---
 
-## ⚠️ Current Limitations
+## Current Limitations
 
 - **Discord** — channel/message access requires a Discord Bot; OAuth alone only exposes server listing.
 - **Telegram** — the bot can only see chats it has been added to and received an update from.
@@ -297,7 +297,7 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Slack integration
 - [ ] Outlook integration
@@ -307,7 +307,7 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! To get started:
 
@@ -328,13 +328,13 @@ Please keep changes focused, preserve the existing conventions, and don't introd
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE) — see the `LICENSE` file for details.
 
 ---
 
-## 🙏 Acknowledgements
+## Acknowledgements
 
 - [Next.js](https://nextjs.org)
 - [Supabase](https://supabase.com)
