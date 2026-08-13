@@ -89,3 +89,30 @@ html {
   animation: fadeInUp 0.6s ease-out 0.2s forwards;
   opacity: 0;
 }
+
+/* Thin scrollbar utility */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(228 228 231) transparent;
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(39 39 42) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(228 228 231);
+  border-radius: 3px;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(39 39 42);
+}

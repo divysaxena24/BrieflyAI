@@ -15,7 +15,6 @@ import {
   SignOutIcon,
 } from "./icons";
 import { SidebarItem } from "./SidebarItem";
-import { UpgradeCard } from "./UpgradeCard";
 import { useConfirmAction, isRedirectError } from "@/components/ConfirmationDialog";
 
 export interface NavItemConfig {
@@ -75,8 +74,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isMobileDrawer
           ? "w-full h-full"
           : collapsed
-          ? "w-20"
-          : "w-64"
+          ? "w-20 h-screen"
+          : "w-64 h-screen"
       }`}
     >
       {/* ── Header: Brand Logo & Title + Collapse Toggle Button ── */}
@@ -86,13 +85,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <Link
-          href="/dashboard"
-          className="flex items-center gap-3 overflow-hidden transition-all hover:opacity-90"
+          href="/"
+          aria-label="BrieflyAI home"
+          className="flex items-center overflow-hidden transition-all hover:opacity-90"
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-accent-500 text-white shadow-md shadow-brand-500/25">
-            <AiSparklesIcon size={20} className="h-5 w-5" />
-          </div>
-
           {!collapsed && (
             <div className="flex flex-col truncate">
               <span className="text-base font-extrabold tracking-tight text-zinc-900 dark:text-white">
@@ -149,12 +145,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
-      {/* ── Bottom Section: Pricing & Upgrade + User Footer ── */}
-      <div className="border-t border-zinc-200/80 p-3 dark:border-zinc-800/80 space-y-3">
-        {/* Pricing & Upgrade component */}
-        <UpgradeCard isCollapsed={collapsed} />
-
-        {/* User Profile & Sign out */}
+      {/* ── Bottom Section: User Footer ── */}
+      <div className="mt-auto border-t border-zinc-200/80 p-3 dark:border-zinc-800/80">
         <div
           className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${
             collapsed ? "justify-center" : "bg-zinc-50 dark:bg-zinc-800/50"

@@ -6,7 +6,6 @@ import {
   MobileMenuIcon,
   ThemeSunIcon,
   ThemeMoonIcon,
-  QuickSearchIcon,
   AiSparklesIcon,
   BreadcrumbChevronIcon,
 } from "./icons";
@@ -53,21 +52,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </div>
 
-      {/* ── Right Side: Search Bar, Theme Toggle, AI Assistant ── */}
+      {/* ── Right Side: Theme Toggle, AI Assistant ── */}
       <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Quick Search Input */}
-        <div className="relative hidden md:block">
-          <QuickSearchIcon size={16} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search integrations, features..."
-            className="h-9 w-64 rounded-xl border border-zinc-200 bg-zinc-50/80 pl-9 pr-12 text-xs text-zinc-900 placeholder-zinc-400 transition-all focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-brand-400 dark:focus:bg-zinc-900"
-          />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded bg-zinc-200/60 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-            ⌘K
-          </kbd>
-        </div>
-
         {/* Light / Dark Mode Toggle */}
         <button
           type="button"

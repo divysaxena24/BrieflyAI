@@ -3,7 +3,6 @@ import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { OverviewCards } from "@/components/dashboard/OverviewCards";
 import { IntegrationOverview } from "@/components/dashboard/IntegrationOverview";
 import { QuickActions } from "@/components/dashboard/QuickActions";
-import { RecentConversations } from "@/components/dashboard/RecentConversations";
 import { ActivityTimeline } from "@/components/dashboard/ActivityTimeline";
 import { GettingStarted } from "@/components/dashboard/GettingStarted";
 
@@ -58,9 +57,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 4. Recent AI Conversations + AI Activity Timeline */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <RecentConversations />
+      {/* 4. AI Activity Timeline */}
+      <div className="mb-8">
         <ActivityTimeline />
       </div>
 

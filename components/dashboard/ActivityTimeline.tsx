@@ -24,14 +24,15 @@ export const ActivityTimeline: React.FC = () => {
   const { activities, loading } = useDashboardData();
 
   return (
-    <div className="flex h-full flex-col rounded-3xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
-      <div className="mb-5 flex items-center gap-2">
+    <div className="flex h-full flex-col rounded-3xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
+      <div className="sticky top-0 z-10 flex items-center gap-2 bg-white p-6 dark:bg-zinc-900/90">
         <ActivityStreamIcon size={18} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
         <h2 className="text-base font-bold text-zinc-900 dark:text-white">
           AI Activity Timeline
         </h2>
       </div>
 
+      <div className="scrollbar-thin max-h-[420px] overflow-y-auto px-6 pb-6">
       {loading ? (
         <div className="space-y-4">
           {[0, 1, 2, 3].map((i) => (
@@ -45,7 +46,7 @@ export const ActivityTimeline: React.FC = () => {
           ))}
         </div>
       ) : activities.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
           <p className="text-xs font-bold text-zinc-700 dark:text-zinc-200">
             No activity yet
           </p>
@@ -97,6 +98,7 @@ export const ActivityTimeline: React.FC = () => {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 };

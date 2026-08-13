@@ -7,14 +7,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "BrieflyAI - Your AI Personal Agent",
   description:
-    "Connect your Gmail, Telegram, and Outlook accounts. BrieflyAI generates smart summaries, sets reminders, and keeps you organized across all your platforms.",
+    "Connect your Gmail, Telegram, and more accounts. BrieflyAI generates smart summaries, sets reminders, and keeps you organized across all your platforms.",
   keywords: [
     "AI personal agent",
     "email summarizer",
     "smart reminders",
     "Gmail",
     "Telegram",
-    "Outlook",
+    "GitHub",
+    "Discord",
     "productivity",
   ],
   openGraph: {
