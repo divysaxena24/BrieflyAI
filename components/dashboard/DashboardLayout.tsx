@@ -38,6 +38,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       document.documentElement.classList.remove("dark");
     }
 
+
     // Follow system changes while the user is on the "system" theme.
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = (event: MediaQueryListEvent) => {
@@ -52,18 +53,53 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     return () => media.removeEventListener("change", onChange);
   }, []);
 
-  const handleToggleDarkMode = () => {
-    setIsDarkMode((prev) => {
-      const nextDark = !prev;
-      if (nextDark) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
+  // Reconcile with the persisted preference — the DB is the single source of
+  // truth for the theme. This keeps the quick header toggle and the
+  // Settings → Appearance card in sync in both directions:
+  //   • changing the theme in Settings now applies across the whole app, and
+  //   • toggling in the header is persisted, so visiting Settings can never
+  //     flip the page back to dark (e.g. a stale "system" default).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/settings");
+        const body = await res.json().catch(() => null);
+        if (cancelled || !res.ok || !body?.data?.preferences?.theme) return;
+        const dbTheme: string = body.data.preferences.theme;
+        if (dbTheme !== "light" && dbTheme !== "dark" && dbTheme !== "system") return;
+        // Already in sync — avoid unnecessary work and class churn.
+        const applied = localStorage.getItem("theme") ?? "system";
+        if (dbTheme === applied) return;
+        const dbDark =
+          dbTheme === "dark" ||
+          (dbTheme === "system" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        localStorage.setItem("theme", dbTheme);
+        setIsDarkMode(dbDark);
+        document.documentElement.classList.toggle("dark", dbDark);
+      } catch {
+        // Unauthenticated or offline — keep the local choice.
       }
-      return nextDark;
-    });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleToggleDarkMode = () => {
+    const nextDark = !isDarkMode;
+    const nextTheme = nextDark ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", nextDark);
+    localStorage.setItem("theme", nextTheme);
+    setIsDarkMode(nextDark);
+    // Persist the choice so Settings → Appearance stays in sync (the DB is
+    // the source of truth). Best-effort — on failure the local change stays.
+    void fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferences: { theme: nextTheme } }),
+    }).catch(() => {});
   };
 
   const handleToggleCollapse = () => {

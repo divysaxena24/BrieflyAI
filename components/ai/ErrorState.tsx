@@ -26,7 +26,7 @@ export function ErrorState({ message, code, integration, hint }: ErrorStateProps
   const reconnect = isReconnectError(code);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl rounded-bl-md border border-red-200 bg-red-50/70 p-4 dark:border-red-900/60 dark:bg-red-950/30">
+    <div className="flex flex-col gap-3 rounded-3xl rounded-tl-md border border-red-200 bg-red-50/70 p-4 shadow-sm dark:border-red-900/60 dark:bg-red-950/30">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400">
           <AlertTriangleIcon size={17} className="h-4.5 w-4.5" />

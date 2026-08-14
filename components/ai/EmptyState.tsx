@@ -21,10 +21,10 @@ export function EmptyState({ integration, title }: EmptyStateProps) {
   const suggestions = emptySuggestions(integration ?? null);
 
   return (
-    <div className="flex flex-col items-start gap-3 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
+    <div className="flex flex-col items-start gap-3 rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-zinc-50/80 p-5 shadow-sm dark:border-zinc-800/80 dark:from-zinc-900 dark:to-zinc-900/80">
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+          className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-sm ${
             meta?.iconBg ?? "bg-zinc-100 dark:bg-zinc-800"
           }`}
         >
@@ -50,7 +50,7 @@ export function EmptyState({ integration, title }: EmptyStateProps) {
           {suggestions.map((suggestion) => (
             <span
               key={suggestion}
-              className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300"
+              className="rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 shadow-sm transition-colors hover:border-brand-200 hover:text-brand-700 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300 dark:hover:border-brand-800 dark:hover:text-brand-300"
             >
               {suggestion}
             </span>

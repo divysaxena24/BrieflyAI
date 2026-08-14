@@ -39,7 +39,7 @@ export function ActionSection({ items }: { items: InlineSegment[][] }) {
           </>
         );
         const className =
-          "group inline-flex w-full max-w-full items-center gap-2 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md active:scale-[0.98] dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:hover:border-brand-800 sm:w-auto";
+          "group inline-flex w-full max-w-full items-center gap-2 rounded-xl border border-zinc-200/80 bg-white px-3 py-2.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:bg-brand-50/40 hover:shadow-md active:scale-[0.98] dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:hover:border-brand-800 dark:hover:bg-brand-950/20 sm:w-auto";
         return href ? (
           <a
             key={index}

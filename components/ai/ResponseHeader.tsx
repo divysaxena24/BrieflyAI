@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy } from "lucide-react";
-import { AiSparklesIcon, CheckCircleIcon, RefreshCwIcon } from "@/components/dashboard/icons";
+import { AiSparklesIcon, CheckCircleIcon, CopyIcon, RefreshCwIcon } from "@/components/dashboard/icons";
 import { INTEGRATIONS, integrationLabel, toolLabel } from "./meta";
 import type { IntegrationName } from "./types";
 
@@ -69,12 +68,13 @@ export function ResponseHeader({ title, integration, tool, onRegenerate, copyTex
           type="button"
           onClick={() => void copy()}
           title="Copy response"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
+          aria-label="Copy response"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:text-brand-600 hover:shadow-md active:translate-y-0 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
         >
           {copied ? (
             <CheckCircleIcon size={14} className="h-3.5 w-3.5 text-emerald-500" />
           ) : (
-            <Copy size={14} className="h-3.5 w-3.5" />
+            <CopyIcon size={14} className="h-3.5 w-3.5" />
           )}
         </button>
         {onRegenerate && (
@@ -82,7 +82,8 @@ export function ResponseHeader({ title, integration, tool, onRegenerate, copyTex
             type="button"
             onClick={onRegenerate}
             title="Regenerate"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
+            aria-label="Regenerate response"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:text-brand-600 hover:shadow-md active:translate-y-0 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
           >
             <RefreshCwIcon size={13} className="h-3.5 w-3.5" />
           </button>

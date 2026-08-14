@@ -37,7 +37,7 @@ export function ExpandableSection<T>({
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-2 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-bold text-zinc-600 transition-colors hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
+          className="mt-2.5 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-[11px] font-bold text-zinc-600 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:text-brand-700 hover:shadow-md active:translate-y-0 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
         >
           {moreLabel(hidden)}
           <ChevronDownIcon size={12} className="h-3 w-3" />
@@ -47,7 +47,7 @@ export function ExpandableSection<T>({
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="mt-2 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-[11px] font-bold text-zinc-600 transition-colors hover:border-brand-300 hover:text-brand-700 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
+          className="mt-2.5 inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-[11px] font-bold text-zinc-600 shadow-sm transition-all duration-200 hover:-translate-y-px hover:border-brand-300 hover:text-brand-700 hover:shadow-md active:translate-y-0 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:border-brand-700 dark:hover:text-brand-300"
         >
           Show less
           <ChevronDownIcon size={12} className="h-3 w-3 rotate-180" />

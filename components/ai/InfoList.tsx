@@ -24,7 +24,7 @@ export function InfoList({ items }: { items: InlineSegment[][] }) {
           return (
             <div
               key={index}
-              className="flex flex-col gap-1 px-3.5 py-2.5 sm:flex-row sm:items-baseline sm:gap-4"
+              className="flex flex-col gap-1 px-4 py-2.5 transition-colors hover:bg-zinc-50/80 sm:flex-row sm:items-baseline sm:gap-4 dark:hover:bg-zinc-800/40"
             >
               <dt className="w-full shrink-0 text-xs font-bold text-zinc-900 dark:text-white sm:w-40">
                 {label}

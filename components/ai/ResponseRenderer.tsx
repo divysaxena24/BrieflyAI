@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
-import { AiSparklesIcon, ExternalLinkIcon, InfoIcon } from "@/components/dashboard/icons";
+import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AiSparklesIcon, ChevronDownIcon, ExternalLinkIcon, InfoIcon } from "@/components/dashboard/icons";
 import { parseResponse } from "./markdown";
 import { ResponseHeader } from "./ResponseHeader";
 import { SummarySection } from "./SummarySection";
@@ -89,8 +90,50 @@ function sectionItems(blocks: ContentBlock[]): InlineSegment[][] | null {
 }
 
 /**
+ * A heading-based section rendered as a collapsible block — every section of
+ * the response can be collapsed so long responses stay scannable.
+ */
+function CollapsibleSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <section className="border-t border-zinc-100 pt-3.5 first:border-t-0 first:pt-0 dark:border-zinc-800/70">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className="group flex w-full items-center justify-between gap-3 py-0.5 text-left"
+      >
+        <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400 transition-colors group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300">
+          <AiSparklesIcon size={11} className="h-3 w-3 text-brand-500 dark:text-brand-400" />
+          {title}
+        </span>
+        <ChevronDownIcon
+          size={14}
+          className={`h-3.5 w-3.5 shrink-0 text-zinc-300 transition-transform duration-200 group-hover:text-zinc-500 dark:text-zinc-600 dark:group-hover:text-zinc-400 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2.5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+/**
  * Renders an AI response as a structured, premium card — never raw markdown.
- * Layout: header → summary → insights → actions → generic sections → sources.
+ * Layout: header → summary → collapsible sections → sources.
  */
 export function ResponseRenderer({
   content,
@@ -123,9 +166,9 @@ export function ResponseRenderer({
   }
 
   return (
-    <div className="animate-fade-in-up max-w-[88%] overflow-hidden rounded-3xl rounded-bl-md border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90">
+    <div className="animate-fade-in-up overflow-hidden rounded-3xl rounded-tl-md border border-zinc-200/80 bg-white shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/90">
       {/* Header */}
-      <div className="border-b border-zinc-100 px-5 py-4 dark:border-zinc-800/60">
+      <div className="border-b border-zinc-100 bg-gradient-to-b from-zinc-50/60 to-transparent px-5 py-4 dark:border-zinc-800/60 dark:from-zinc-800/20">
         <ResponseHeader
           title={title}
           integration={integration}
@@ -136,7 +179,7 @@ export function ResponseRenderer({
       </div>
 
       {/* Body */}
-      <div className="space-y-4 px-5 py-4">
+      <div className="space-y-4 px-5 py-5">
         {aiError && (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
             AI summarization was unavailable ({aiError.message}) — showing the retrieved data.
@@ -158,44 +201,44 @@ export function ResponseRenderer({
           );
         })}
 
-        {/* Heading-based sections. */}
+        {/* Heading-based sections (collapsible). */}
         {parsed.sections.map((section, sectionIndex) => {
           if (section.kind === "actions") {
             const items = sectionItems(section.blocks);
             const prose = section.blocks.filter((b) => b.kind === "paragraph");
             return (
-              <section key={sectionIndex} className="space-y-2.5">
-                <SectionTitle>{section.title}</SectionTitle>
-                {items && <ActionSection items={items} />}
-                {prose.length > 0 && <div className="space-y-2">{renderBlocks(prose)}</div>}
-              </section>
+              <CollapsibleSection key={sectionIndex} title={section.title}>
+                <div className="space-y-2.5">
+                  {items && <ActionSection items={items} />}
+                  {prose.length > 0 && <div className="space-y-2">{renderBlocks(prose)}</div>}
+                </div>
+              </CollapsibleSection>
             );
           }
           if (section.kind === "insights") {
             const items = sectionItems(section.blocks);
             const rest = section.blocks.filter((b) => b.kind !== "list");
             return (
-              <section key={sectionIndex} className="space-y-2.5">
-                <SectionTitle>{section.title}</SectionTitle>
-                {items && <InsightSection items={items} />}
-                {rest.length > 0 && <div className="space-y-2">{renderBlocks(rest)}</div>}
-              </section>
+              <CollapsibleSection key={sectionIndex} title={section.title}>
+                <div className="space-y-2.5">
+                  {items && <InsightSection items={items} />}
+                  {rest.length > 0 && <div className="space-y-2">{renderBlocks(rest)}</div>}
+                </div>
+              </CollapsibleSection>
             );
           }
           if (section.kind === "sources") {
             const items = sectionItems(section.blocks);
             return (
-              <section key={sectionIndex} className="space-y-2.5">
-                <SectionTitle>{section.title}</SectionTitle>
+              <CollapsibleSection key={sectionIndex} title={section.title}>
                 {items ? <LinkRows items={items} /> : renderBlocks(section.blocks)}
-              </section>
+              </CollapsibleSection>
             );
           }
           return (
-            <section key={sectionIndex} className="space-y-2.5">
-              <SectionTitle>{section.title}</SectionTitle>
+            <CollapsibleSection key={sectionIndex} title={section.title}>
               <div className="space-y-2.5">{renderBlocks(section.blocks)}</div>
-            </section>
+            </CollapsibleSection>
           );
         })}
       </div>
@@ -215,15 +258,5 @@ export function ResponseRenderer({
         </div>
       )}
     </div>
-  );
-}
-
-/** Small uppercase section heading. */
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-      <AiSparklesIcon size={11} className="h-3 w-3 text-brand-500 dark:text-brand-400" />
-      {children}
-    </h3>
   );
 }

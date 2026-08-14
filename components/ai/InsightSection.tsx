@@ -36,10 +36,10 @@ export function InsightSection({ items }: { items: InlineSegment[][] }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: Math.min(index * 0.04, 0.3) }}
-            className="rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-sm dark:border-zinc-800/80 dark:bg-zinc-900/90"
+            className="group rounded-2xl border border-zinc-200/80 bg-white p-3.5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/90 dark:hover:border-brand-900/60 dark:hover:shadow-black/20"
           >
             <div className="flex items-start gap-2.5">
-              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 shadow-sm shadow-brand-500/30" />
+              <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-gradient-to-r from-brand-500 to-accent-500 shadow-sm shadow-brand-500/30 transition-transform duration-300 group-hover:scale-125" />
               <div className="min-w-0">
                 {label && (
                   <p className="text-xs font-bold text-zinc-900 dark:text-white">{label}</p>

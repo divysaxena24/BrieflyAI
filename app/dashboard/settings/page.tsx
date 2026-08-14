@@ -143,11 +143,12 @@ function SettingsCenter() {
   if (loading) {
     return (
       <div>
-        <PageHeader
-          title="Settings"
-          description="Manage your account, AI preferences, integrations, appearance, and privacy."
-        />
-        <SettingsSkeleton />
+      <PageHeader
+        title="Settings"
+        description="Manage your account, AI preferences, integrations, appearance, and privacy."
+        hideAiStatus
+      />
+      <SettingsSkeleton />
       </div>
     );
   }
@@ -158,6 +159,7 @@ function SettingsCenter() {
         <PageHeader
           title="Settings"
           description="Manage your account, AI preferences, integrations, appearance, and privacy."
+          hideAiStatus
         />
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
           <p className="font-bold">Couldn&apos;t load settings</p>
@@ -183,6 +185,7 @@ function SettingsCenter() {
       <PageHeader
         title="Settings"
         description="Manage your account, AI preferences, integrations, appearance, and privacy."
+        hideAiStatus
       />
 
       <div className="lg:grid lg:grid-cols-[14rem_1fr] lg:items-start lg:gap-8">

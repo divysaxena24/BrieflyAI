@@ -57,6 +57,14 @@ import {
   Shield,
   PieChart,
   MailOpen,
+  Paperclip,
+  Mic,
+  ArrowUp,
+  Download,
+  Share2,
+  Bookmark,
+  FileDown,
+  Copy,
 } from "lucide-react";
 
 // Try importing Hugeicons React icons dynamically/safely
@@ -155,3 +163,13 @@ export const SparklesIcon = resolveIcon(["SparklesIcon", "StarsIcon", "MagicWand
 export const PieChartIcon = resolveIcon(["PieChartIcon", "ChartPieIcon", "Analytics01Icon"], PieChart);
 export const MailOpenIcon = resolveIcon(["MailOpenIcon", "Mail01Icon", "MailViewIcon"], MailOpen);
 export const CalendarIcon = resolveIcon(["Calendar01Icon", "Calendar02Icon", "CalendarIcon"], Calendar);
+
+// AI Assistant page icons
+export const PaperclipIcon = resolveIcon(["PaperclipIcon", "AttachmentIcon"], Paperclip);
+export const MicIcon = resolveIcon(["MicIcon", "MicrophoneIcon"], Mic);
+export const ArrowUpIcon = resolveIcon(["ArrowUp01Icon", "ArrowUpIcon"], ArrowUp);
+export const DownloadIcon = resolveIcon(["Download01Icon", "DownloadIcon"], Download);
+export const ShareIcon = resolveIcon(["Share01Icon", "Share02Icon"], Share2);
+export const BookmarkIcon = resolveIcon(["BookmarkIcon", "Save02Icon"], Bookmark);
+export const FileDownIcon = resolveIcon(["FileDownloadIcon", "FileExportIcon"], FileDown);
+export const CopyIcon = resolveIcon(["Copy01Icon", "Copy02Icon"], Copy);

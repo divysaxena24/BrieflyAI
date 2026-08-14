@@ -11,6 +11,8 @@ export interface PageHeaderProps {
   aiReady?: boolean;
   lastSync?: string;
   platformsAvailable?: number;
+  /** Hide the AI Status banner (e.g. on pages where it isn't relevant). */
+  hideAiStatus?: boolean;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -21,6 +23,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   aiReady = true,
   lastSync = "2 minutes ago",
   platformsAvailable = 6,
+  hideAiStatus = false,
 }) => {
   return (
     <div className="mb-8 space-y-6">
@@ -51,6 +54,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       </motion.div>
 
       {/* AI Status Banner */}
+      {!hideAiStatus && (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -79,6 +83,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         </div>
       </motion.div>
+      )}
     </div>
   );
 };

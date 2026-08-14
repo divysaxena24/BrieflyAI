@@ -20,6 +20,7 @@ export { RichText, RichLine } from "./RichText";
 export { parseResponse, parseInline } from "./markdown";
 export {
   INTEGRATIONS,
+  INTEGRATION_ORDER,
   integrationLabel,
   integrationOf,
   toolLabel,
