@@ -1,8 +1,3 @@
-<div align="center">
-
-<!-- Replace with your project logo -->
-<img src="docs/images/logo.png" alt="BrieflyAI" width="96" />
-
 # BrieflyAI
 
 **Ask your data anything — across every platform.**
