@@ -32,6 +32,8 @@ export interface IntegrationConfig {
   permissions: string;
   lastSync: string | null;
   account: string | null;
+  /** ISO timestamp of when the connection was created (from integrations.createdAt) */
+  createdAt?: string | null;
   /** Space-separated OAuth scope string from oauth_tokens */
   scopes?: string | null;
   /** Hex color or Tailwind gradient key used for the platform accent */

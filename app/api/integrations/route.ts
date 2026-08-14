@@ -54,6 +54,7 @@ export const GET = withHandler(async (_req: Request) => {
               status: mapDbStatusToConnectionStatus(dbInt.status),
               permissions: dbInt.permissions ?? p.permissions,
               lastSync: dbInt.lastSyncAt ? dbInt.lastSyncAt.toISOString() : p.lastSync,
+              createdAt: dbInt.createdAt ? dbInt.createdAt.toISOString() : null,
               account: dbInt.accountEmail ?? dbInt.accountName ?? p.account,
               scopes: token?.scope ?? null,
             };

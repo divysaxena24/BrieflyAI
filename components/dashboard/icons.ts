@@ -46,6 +46,17 @@ import {
   Cpu,
   Globe,
   LayoutGrid,
+  ShieldCheck,
+  KeyRound,
+  Inbox,
+  FileText,
+  User,
+  Database,
+  Gauge,
+  BarChart3,
+  Shield,
+  PieChart,
+  MailOpen,
 } from "lucide-react";
 
 // Try importing Hugeicons React icons dynamically/safely
@@ -125,3 +136,22 @@ export const LayersIcon = resolveIcon(["LayersIcon", "StackIcon"], Layers);
 export const ListChecksIcon = resolveIcon(["ListCheckIcon", "CheckListIcon"], ListChecks);
 export const NetworkIcon = resolveIcon(["NetworkIcon", "NodesIcon"], Network);
 export const CpuIcon = resolveIcon(["CpuIcon", "ProcessorIcon"], Cpu);
+
+// Platform detail & analytics icons (premium integration page)
+export const ShieldCheckIcon = resolveIcon(["ShieldCheckIcon", "ShieldDoneIcon", "VerifiedIcon"], ShieldCheck);
+export const KeyIcon = resolveIcon(["KeyIcon", "Key01Icon", "PasswordIcon"], KeyRound);
+export const InboxIcon = resolveIcon(["InboxIcon", "MailInbox01Icon"], Inbox);
+export const FileTextIcon = resolveIcon(["FileTextIcon", "File01Icon", "DocumentTextIcon"], FileText);
+export const UserProfileIcon = resolveIcon(["UserIcon", "UserCircleIcon", "UserMultipleIcon"], User);
+export const DatabaseIcon = resolveIcon(["DatabaseIcon", "DataBaseIcon", "StorageIcon"], Database);
+export const ZapIcon = resolveIcon(["ZapIcon", "BoltIcon", "FlashIcon"], Zap);
+export const GaugeIcon = resolveIcon(["GaugeIcon", "SpeedometerIcon", "DashboardSpeed01Icon"], Gauge);
+export const BarChartIcon = resolveIcon(["BarChart01Icon", "ChartBarIcon", "Analytics02Icon"], BarChart3);
+export const ShieldIcon = resolveIcon(["ShieldIcon", "ShieldDoneIcon", "SecurityIcon"], Shield);
+export const HardDriveIcon = resolveIcon(["HardDriveIcon", "DriveIcon", "Storage01Icon"], HardDrive);
+export const SearchIcon = resolveIcon(["Search01Icon", "Search02Icon", "SearchIcon"], Search);
+export const ClockIcon = resolveIcon(["Clock01Icon", "Clock02Icon", "TimeIcon"], Clock);
+export const SparklesIcon = resolveIcon(["SparklesIcon", "StarsIcon", "MagicWand01Icon"], Sparkles);
+export const PieChartIcon = resolveIcon(["PieChartIcon", "ChartPieIcon", "Analytics01Icon"], PieChart);
+export const MailOpenIcon = resolveIcon(["MailOpenIcon", "Mail01Icon", "MailViewIcon"], MailOpen);
+export const CalendarIcon = resolveIcon(["Calendar01Icon", "Calendar02Icon", "CalendarIcon"], Calendar);
