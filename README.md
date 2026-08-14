@@ -18,6 +18,18 @@ BrieflyAI is an AI-powered productivity assistant that connects the tools you al
 
 ---
 
+## Highlights
+
+- **AI-powered productivity assistant** — natural-language questions about your real, live data
+- **Cross-platform support** — Gmail, Google Calendar, Google Drive, GitHub, Discord, and Telegram
+- **Secure OAuth 2.0 authentication** — no third-party passwords
+- **Real-time AI summaries** — powered by Groq
+- **Responsive, modern SaaS interface** — clean from mobile to desktop
+- **Type-safe full-stack architecture** — Next.js & TypeScript
+- **Production deployment on Vercel** — see the live demo above
+
+---
+
 ## Features
 
 BrieflyAI routes every request through a **tool planner → executor → Groq summarizer** pipeline. Tools retrieve *real* data from your connected accounts; the AI then explains it in plain language — nothing is fabricated.
@@ -80,10 +92,6 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 <img width="1898" height="890" alt="image" src="https://github.com/user-attachments/assets/9384eb00-68f6-496b-b2d1-0a749d58a8e8" />
 <img width="1919" height="927" alt="image" src="https://github.com/user-attachments/assets/17429bb5-c609-42ff-a611-f914be4be91b" />
 
-
-
-
-
 ---
 
 ## Tech Stack
@@ -103,9 +111,6 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 | Technology | Purpose |
 | --- | --- |
 | Next.js API Routes | REST endpoints (`/api/*`) |
-| [Drizzle ORM](https://orm.drizzle.team) | Type-safe SQL & migrations |
-| [PostgreSQL](https://www.postgresql.org) | Primary database |
-| [Supabase](https://supabase.com) | Auth (email + Google OAuth) |
 | OAuth 2.0 | Google, GitHub & Discord integration auth |
 
 ### AI
@@ -114,11 +119,29 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 | --- | --- |
 | [Groq](https://groq.com) | Fast LLM inference (`llama-3.3-70b-versatile` by default) |
 
-### Tests
+### Database
+
+| Technology | Purpose |
+| --- | --- |
+| [PostgreSQL](https://www.postgresql.org) | Primary database |
+| [Drizzle ORM](https://orm.drizzle.team) | Type-safe SQL & migrations |
+| [Supabase](https://supabase.com) | Auth (email + Google OAuth) |
+
+### DevOps & Deployment
+
+| Technology | Purpose |
+| --- | --- |
+| [Docker](https://www.docker.com) | Multi-stage production image with health check |
+| Docker Compose | Single-command startup for the full app |
+| [GitHub Actions](https://github.com/features/actions) | CI on every push and pull request |
+| [Vercel](https://vercel.com) | Production hosting |
+
+### Testing
 
 | Technology | Purpose |
 | --- | --- |
 | [Vitest](https://vitest.dev) | 150+ suites, 3,500+ unit & integration tests |
+| [ESLint](https://eslint.org) | Linting & code quality |
 
 ---
 
@@ -146,12 +169,74 @@ flowchart TD
 
 **Request flow:** a natural-language query is classified into a tool → the tool calls the provider's API with the user's OAuth credentials → the result is normalized → Groq writes the summary → the frontend renders it as structured cards (summary, insights, actions, sources).
 
+### Deployment Pipeline
+
+```mermaid
+flowchart TD
+    Dev[Developer] --> GitHub[GitHub]
+    GitHub --> GHA[GitHub Actions]
+    GHA --> Checks[Typecheck, Lint, Tests, Build]
+    Checks --> Vercel[Vercel]
+    Vercel --> Prod[Production]
+```
+
+Every push to `main` (and every pull request targeting it) runs the CI pipeline; only passing builds proceed to production on Vercel.
+
+---
+
+## DevOps & Deployment
+
+| Area | Tool | Notes |
+| --- | --- | --- |
+| Containerization | [Docker](https://www.docker.com) | Multi-stage build, non-root runtime, health check on `/api/health` |
+| Orchestration | Docker Compose | Start the full app with a single command |
+| Continuous integration | [GitHub Actions](https://github.com/features/actions) | Typecheck, lint, tests, and production build on every push/PR |
+| Hosting | [Vercel](https://vercel.com) | Production deployment — see the live demo |
+| Secrets management | Environment variables | Read server-side only; grouped list in [Environment Variables](#environment-variables) |
+
+### Docker
+
+The [Dockerfile](Dockerfile) builds a small, production-ready image (multi-stage, runs as a non-root user) with a health check on `/api/health`.
+
+**Build and run with Docker Compose** (recommended):
+
+```bash
+docker compose up --build
+```
+
+**Build and run with plain Docker:**
+
+```bash
+docker build -t brieflyai .
+docker run -p 3000:3000 brieflyai
+```
+
+The container expects the environment variables listed in [Environment Variables](#environment-variables) — provide them in your shell, or pass a file with `docker run --env-file .env.local`.
+
+### Continuous Integration
+
+A [GitHub Actions workflow](.github/workflows/ci.yml) runs on every push and pull request to `main`/`master`. It validates the repository with:
+
+1. **Type checking** — `npx tsc --noEmit`
+2. **Linting** — `npm run lint`
+3. **Tests** — `npm run test` (150+ Vitest suites)
+4. **Production build** — `npm run build`
+5. **Docker validation** — `docker compose config` and a Docker image build
+
+A failing job blocks the merge, so every commit that reaches `main` is verified.
+
+### Deployment
+
+The application is hosted on **Vercel** — the [live demo](https://briefly-ai-tau.vercel.app/) runs the latest production build.
+
+Because CI runs on every push to `main`, production always starts from a commit that passes typechecking, linting, the full test suite, and a production build. No unverified code reaches production.
+
 ---
 
 ## Project Structure
 
 ```
-brieflyai/
+BrieflyAI/
 ├── app/                        # Next.js App Router
 │   ├── (auth)/                 # Sign-in / sign-up pages
 │   ├── dashboard/              # Dashboard, AI Assistant, Features, Integrations, Settings
@@ -179,10 +264,17 @@ brieflyai/
 
 ## Installation
 
+**Prerequisites**
+
+- **Node.js 22+** — the version used by the CI pipeline and Docker image
+- **npm 10+** — bundled with Node.js
+- **PostgreSQL** — a running database instance (local or hosted)
+- **Supabase project** — for email + Google authentication
+
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/brieflyai.git
-cd brieflyai
+git clone https://github.com/divysaxena24/BrieflyAI.git
+cd BrieflyAI
 
 # 2. Install dependencies
 npm install
@@ -204,29 +296,37 @@ Open [http://localhost:3000](http://localhost:3000). Sign in with Google, then c
 ## Environment Variables
 
 <details>
-<summary><b>Required for the app to run</b></summary>
+<summary><b>Core</b></summary>
 
 | Variable | Description |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (auth) |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key (auth) |
-| `DATABASE_URL` | PostgreSQL connection string (Drizzle) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL — used for authentication |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key — used for authentication |
+| `DATABASE_URL` | PostgreSQL connection string — consumed by Drizzle ORM |
+
+</details>
+
+<details>
+<summary><b>AI</b></summary>
+
+| Variable | Description |
+| --- | --- |
 | `GROQ_API_KEY` | Groq API key — **server only, never sent to the client** |
 
 </details>
 
 <details>
-<summary><b>Integration OAuth credentials</b></summary>
+<summary><b>OAuth Providers</b></summary>
 
 | Variable | Description |
 | --- | --- |
-| `GOOGLE_CLIENT_ID` | Google OAuth client id (Gmail, Calendar, Drive) |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID (Gmail, Calendar, Drive) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
 | `GOOGLE_REDIRECT_URI` | Google OAuth callback URL |
-| `GITHUB_CLIENT_ID` | GitHub OAuth client id |
+| `GITHUB_CLIENT_ID` | GitHub OAuth client ID |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret |
 | `GITHUB_REDIRECT_URI` | GitHub OAuth callback URL |
-| `DISCORD_CLIENT_ID` | Discord OAuth client id |
+| `DISCORD_CLIENT_ID` | Discord OAuth client ID |
 | `DISCORD_CLIENT_SECRET` | Discord OAuth client secret |
 | `DISCORD_REDIRECT_URI` | Discord OAuth callback URL |
 
@@ -264,22 +364,22 @@ Once integrations are connected, open the **AI Assistant** and ask:
 
 ## Design Goals
 
-- **Modern SaaS UI** — polished, product-grade interface
-- **Responsive design** — clean at 320px through 1920px (mobile drawer, adaptive grids)
-- **Accessibility** — semantic markup, keyboard support, ARIA roles, reduced-motion-safe
-- **Dark theme** — full light/dark/system theming, persisted per user
-- **Secure OAuth authentication** — standard flows, no custom password schemes
-- **AI-first experience** — every screen helps you get to the assistant faster
+- **Modern SaaS interface** — polished, product-grade UI across every screen
+- **Responsive layout** — consistent experience from 320px to 1920px (mobile drawer, adaptive grids)
+- **Accessibility** — semantic markup, keyboard navigation, ARIA roles, reduced-motion support
+- **Theming** — full light/dark/system theming, persisted per user
+- **Secure authentication** — standard OAuth flows; no custom password schemes
+- **AI-first experience** — every screen is designed to get you to the assistant faster
 
 ---
 
 ## Security
 
-- **OAuth 2.0 authentication** for every integration — no third-party passwords
+- **OAuth token protection** — tokens live server-side, are rotated and refreshed, and are never exposed to the frontend, logs, or API responses
+- **Server-side API keys** — secrets such as `GROQ_API_KEY` and client secrets are read only on the server
+- **No sensitive credentials on the client** — only the Supabase publishable key is exposed to the browser
+- **Read-only scopes** — integrations request the least privilege required; destructive actions always require explicit confirmation
 - **No password storage** — app auth is delegated to Supabase (email + Google)
-- **Secure token handling** — tokens live server-side, are rotated/refreshed, and are never exposed to the frontend, logs, or API responses
-- **Environment variable protection** — secrets (`GROQ_API_KEY`, client secrets) are read only on the server
-- **Principle of least privilege** — integrations request read-only scopes; destructive actions always require explicit confirmation
 
 ---
 
