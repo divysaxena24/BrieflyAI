@@ -77,13 +77,14 @@ BrieflyAI routes every request through a **tool planner → executor → Groq su
 
 ## Screenshots
 
-> Add real screenshots to `docs/images/` and update the paths below.
+<img width="1901" height="937" alt="image" src="https://github.com/user-attachments/assets/7e6a70de-4004-437f-9348-effdd63c5aee" />
+<img width="1881" height="934" alt="image" src="https://github.com/user-attachments/assets/57ef178f-5bdd-4973-85db-6897b6d98e03" />
+<img width="1898" height="890" alt="image" src="https://github.com/user-attachments/assets/9384eb00-68f6-496b-b2d1-0a749d58a8e8" />
+<img width="1919" height="927" alt="image" src="https://github.com/user-attachments/assets/17429bb5-c609-42ff-a611-f914be4be91b" />
 
-| | |
-| --- | --- |
-| ![Dashboard](docs/images/dashboard.png) | ![AI Assistant](docs/images/ai-chat.png) |
-| ![Features](docs/images/features.png) | ![Integrations](docs/images/integrations.png) |
-| ![Settings](docs/images/settings.png) | |
+
+
+
 
 ---
 
