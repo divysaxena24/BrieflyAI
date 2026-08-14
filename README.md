@@ -14,9 +14,7 @@ BrieflyAI is an AI-powered productivity assistant that connects the tools you al
 ![OAuth 2.0](https://img.shields.io/badge/OAuth%202.0-eb5424?logo=auth0&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
-[Live Demo](https://your-demo-url.com) · [Documentation](https://your-docs-url.com) · [Report Issue](https://github.com/your-username/brieflyai/issues/new)
-
-</div>
+[Live Demo](https://briefly-ai-tau.vercel.app/)
 
 ---
 
